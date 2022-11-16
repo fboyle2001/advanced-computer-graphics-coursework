@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-class VertexSplittingGraph:
+class VertexGraph:
     def __init__(self):
         self.indices = []
         self.index_data = {}
@@ -98,7 +98,6 @@ class VertexSplittingGraph:
         epsilon = 1e-7
         polygons = self.compute_polygons(index)
         a_coords = np.array(self.index_data[index])
-        four_d_coords = np.asmatrix(np.append(a_coords, 1.0)).trace
         Q_matrix = np.zeros((4, 4))
 
         for _, b, c in polygons:
@@ -114,7 +113,7 @@ class VertexSplittingGraph:
             # Avoid a div by 0
             normal_vec = cross / (cross_norm + epsilon)
             d = -np.dot(normal_vec, a_coords)
-            a, b, c = normal_vec
+            # a, b, c = normal_vec
             plane_vec = np.asmatrix(np.append(normal_vec, d)).T
 
             K_p = plane_vec @ plane_vec.T
@@ -129,7 +128,7 @@ class VertexSplittingGraph:
 
         return Q_matrix
 
-    def determine_optimal_vertex(self):
+    def determine_preferred_collapsible_edge(self):
         edge_pairs = set()
 
         for start in self.edges.keys():
@@ -148,6 +147,8 @@ class VertexSplittingGraph:
         smallest_error = None
         smallest_error_pair = None
 
+        inversion_enabled = False
+
         for a, b in edge_pairs:
             combined_quadric = quadrics[a] + quadrics[b]
             partial_derivatives = np.array([
@@ -158,7 +159,7 @@ class VertexSplittingGraph:
             ])
 
             # Just use the midpoint initially to test it works
-            is_invertible = False # np.abs(np.linalg.det(partial_derivatives)) > 1e-7
+            is_invertible = np.abs(np.linalg.det(partial_derivatives)) > 1e-7 and inversion_enabled
             v_bar = (np.array(self.index_data[a]) + np.array(self.index_data[b])) / 2
             v_bar = np.asmatrix(np.append(v_bar, 1)).T
 
@@ -175,7 +176,7 @@ class VertexSplittingGraph:
         assert smallest_error_pair is not None
         return smallest_error_pair
 
-    def plot(self, join=True, show_vertices=True, label_vertices=True):
+    def display(self, join=True, show_vertices=True, label_vertices=True):
         fig = plt.figure()
 
         # Plot a 3D scatter of the vertices
