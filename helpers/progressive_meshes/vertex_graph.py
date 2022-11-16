@@ -6,6 +6,7 @@ class VertexGraph:
         self.indices = []
         self.index_data = {}
         self.edges = {}
+        self.m_count = 0
 
     def add_node(self, index, data):
         assert index not in self.indices
@@ -51,21 +52,24 @@ class VertexGraph:
         right_x, right_y, right_z = self.index_data[right]
 
         midpoint_coords = ((left_x + right_x) / 2, (left_y + right_y) / 2, (left_z + right_z) / 2)
-        midpoint = f"midpoint_{left}_{right}"
+        self.m_count += 1
+        midpoint_name = f"m{self.m_count}"
 
-        self.add_node(midpoint, midpoint_coords)
+        self.add_node(midpoint_name, midpoint_coords)
 
         for neighbour in self.get_neighbours(left):
-            self.add_edge(midpoint, neighbour)
+            self.add_edge(midpoint_name, neighbour)
 
         for neighbour in self.get_neighbours(right):
-            if neighbour == midpoint:
+            if neighbour == midpoint_name:
                 continue
             
-            self.add_edge(midpoint, neighbour)
+            self.add_edge(midpoint_name, neighbour)
 
         self.remove_node(left)
         self.remove_node(right)
+
+        return midpoint_name
 
     def compute_polygons(self, origin):
         polygons = set()
@@ -175,6 +179,25 @@ class VertexGraph:
         
         assert smallest_error_pair is not None
         return smallest_error_pair
+
+    def find_index_by_coords(self, coords):
+        assert coords in self.index_data.values()
+        return list(self.index_data.keys())[list(self.index_data.values()).index(coords)]
+
+    def split_vertex(self, vertex_name, a_name, a_coords, a_neighbours, b_name, b_coords, b_neighbours):
+        assert vertex_name in self.indices
+        assert a_name not in self.indices
+        assert b_name not in self.indices
+
+        self.remove_node(vertex_name)
+        self.add_node(a_name, a_coords)
+        self.add_node(b_name, b_coords)
+
+        for a_neighbour in a_neighbours:
+            self.add_edge(a_name, a_neighbour)
+
+        for b_neighbour in b_neighbours:
+            self.add_edge(b_name, b_neighbour)
 
     def display(self, join=True, show_vertices=True, label_vertices=True):
         fig = plt.figure()
