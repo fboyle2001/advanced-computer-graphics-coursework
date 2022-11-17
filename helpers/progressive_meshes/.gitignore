@@ -1,0 +1,4 @@
+*.obj
+*.mtl
+*.pyc
+__pycache__/

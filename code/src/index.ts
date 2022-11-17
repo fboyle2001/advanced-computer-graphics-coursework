@@ -120,8 +120,9 @@ pmReducedTableLoader.load(`models/custom/table/pm_reduced/model.obj`, (obj) => {
 }, undefined, console.error)
 
 const pm = new ProgressiveMeshStreamingModel([], [])
-const mesh = pm.scratch()
-scene.add(mesh)
+// const mesh = pm.scratch()
+scene.add(pm.mesh)
+// pm.stepMesh();
 
 const animate = () => {
     requestAnimationFrame(animate)
@@ -137,10 +138,18 @@ const animate = () => {
     if(document.getElementById("geometry_count") !== null) {
         (document.getElementById("geometry_count") as HTMLElement).innerHTML = `${renderer.info.memory.geometries}`;
     }
+    
 }
 
 const render = () => {
     renderer.render(scene, camera)
+    // //@ts-ignore
+    // pm.mesh.geometry.needsUpdate = true;
+    // pm.mesh.geometry.attributes.position.needsUpdate = true;
+    // pm.mesh.geometry.computeBoundingBox();
+    // pm.mesh.geometry.computeBoundingSphere();
+    // pm.stepMesh()
+    pm.stepMesh();
 }
 
 animate()

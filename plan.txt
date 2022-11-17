@@ -1,0 +1,14 @@
+Plan
+
+Network Streaming
+
+Dynamic Performance Optimisation
+- Set desired framerate
+- Anti-aliasing
+
+Lighting
+Selective Refinement
+
+Progressive Mesh
+- Buffer Geometry with streaming would be really cool to try
+Level of Detail
