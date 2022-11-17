@@ -18,11 +18,14 @@ class OBJModel:
     def write(self, include_reduction_record: bool) -> str:
         return write_obj_file(self, include_reduction_record)
 
-    def reduce(self, iterations: int) -> Tuple[int, int]:
+    def reduce(self, iterations: int, verbose: bool = False) -> Tuple[int, int]:
         assert not self.already_reduced, "Use the raw model to reduce rather than an imported pre-reduced model"
         
         start_polygon_count = len(self.graph.compute_all_polygons())
         reduction_records = []
+
+        if verbose:
+            print(f"Start Polygon Count: {start_polygon_count}")
 
         for iteration in range(iterations):
             a, b = self.graph.determine_preferred_collapsible_edge()
@@ -30,10 +33,10 @@ class OBJModel:
             reduction_record = {
                 "i": iteration,
                 "l": a,
-                "lc": self.graph.index_data[a],
+                "lc": self.graph.index_data[a].coords,
                 "ln": tuple(self.graph.get_neighbours(a)),
                 "r": b,
-                "rc": self.graph.index_data[b],
+                "rc": self.graph.index_data[b].coords,
                 "rn": tuple(self.graph.get_neighbours(b))
             }
             
@@ -41,9 +44,20 @@ class OBJModel:
             reduction_record["n"] = new_vertex_name
 
             reduction_records.append(reduction_record)
+            
+            if verbose:
+                print()
+                print(f"==Iteration {iteration + 1}==")
+                print(f"Collapsed edge {a}, {b}")
+                print(f"Polygon Count: {len(self.graph.compute_all_polygons())}")
 
         self.reduction_records += reduction_records
         end_polygon_count = len(self.graph.compute_all_polygons())
+
+        if verbose:
+            print()
+            print(f"End Polygon Count: {start_polygon_count}")
+
         return start_polygon_count, end_polygon_count
     
     def reproduce(self):
@@ -186,17 +200,30 @@ def write_obj_file(obj_model: OBJModel, write_reduction_records: bool) -> str:
     save_index_order = []
 
     for real_index, index in enumerate(obj_model.graph.indices, 1):
-        x, y, z = obj_model.graph.index_data[index]
+        x, y, z = obj_model.graph.index_data[index].coords
         lines.append(f"v {x} {y} {z}")
         real_index_map[index] = real_index
         save_index_order.append(index)
 
-    lines.append("")
-    lines.append("# Polygon Faces")
+    normals = {}
 
-    for a, b, c in obj_model.graph.compute_all_polygons():
+    polygon_lines = []
+    normal_lines = []
+
+    for polygon_data in obj_model.graph.compute_all_polygons().values():
+        a, b, c = polygon_data["polygon"]
+        normal = polygon_data["normal"]
+
+        if str(normal) not in normals.keys():
+            normals[str(normal)] = len(normals.keys()) + 1
+            normal_lines.append(f"vn {normal[0]} {normal[1]} {normal[2]}")
+        
+        normal = normals[str(normal)]
+
         real_a, real_b, real_c = real_index_map[a], real_index_map[b], real_index_map[c]
-        lines.append(f"f {real_a}// {real_b}// {real_c}//")
+        polygon_lines.append(f"f {real_a}// {real_b}// {real_c}//")
+
+    lines = [*lines, "", "# Normal Vectors", *normal_lines, "", "# Polygon Faces", *polygon_lines]
 
     if write_reduction_records:
         lines.append("")

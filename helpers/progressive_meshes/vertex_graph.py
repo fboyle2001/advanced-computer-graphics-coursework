@@ -1,19 +1,25 @@
+from typing import Dict, List
+
 import matplotlib.pyplot as plt
 import numpy as np
 
+class VertexData:
+    def __init__(self, coords):
+        self.coords = coords
+
 class VertexGraph:
     def __init__(self):
-        self.indices = []
-        self.index_data = {}
+        self.indices: List[str] = []
+        self.index_data: Dict[str, VertexData] = {}
         self.edges = {}
         self.m_count = 0
 
-    def add_node(self, index, data):
+    def add_node(self, index, coords):
         assert index not in self.indices
-        assert len(data) == 3
+        assert len(coords) == 3
 
         self.indices.append(index)
-        self.index_data[index] = data
+        self.index_data[index] = VertexData(coords)
         self.edges[index] = set()
 
     def add_edge(self, index_one, index_two):
@@ -48,8 +54,11 @@ class VertexGraph:
 
         assert right in self.get_neighbours(left), "Nodes must be connected by an edge"
 
-        left_x, left_y, left_z = self.index_data[left]
-        right_x, right_y, right_z = self.index_data[right]
+        left_data = self.index_data[left]
+        left_x, left_y, left_z = left_data.coords
+
+        right_data = self.index_data[left]
+        right_x, right_y, right_z = right_data.coords
 
         midpoint_coords = ((left_x + right_x) / 2, (left_y + right_y) / 2, (left_z + right_z) / 2)
         self.m_count += 1
@@ -72,8 +81,10 @@ class VertexGraph:
         return midpoint_name
 
     def compute_polygons(self, origin):
-        polygons = set()
+        polygons = dict()
         neighbours = self.get_neighbours(origin)
+        a_coords = np.array(self.index_data[origin].coords)
+        epsilon = 1e-7
 
         # Go to each neighbour, check if any of their neighbours are also neighbours of the origin
         for neighbour in neighbours:
@@ -83,16 +94,31 @@ class VertexGraph:
                 left = str(shared) if str(shared) < str(neighbour) else str(neighbour)
                 right = str(shared) if str(shared) > str(neighbour) else str(neighbour)
 
-                polygon = (str(origin), left, right)
-                polygons.add(polygon)
+                b_coords = np.array(self.index_data[shared].coords)
+                c_coords = np.array(self.index_data[neighbour].coords)
+
+                ab = b_coords - a_coords
+                ac = c_coords - a_coords
+
+                cross = np.cross(ab, ac)
+                cross_norm = np.linalg.norm(cross)
+
+                # Avoid a div by 0
+                normal_vec = cross / (cross_norm + epsilon)
+
+                polygon = sorted((str(origin), left, right))
+                polygons[str(polygon)] = {
+                    "polygon": polygon,
+                    "normal": normal_vec
+                }
 
         return polygons
 
     def compute_all_polygons(self):
-        polygons = set()
+        polygons = dict()
 
         for index in self.indices:
-            polygons |= self.compute_polygons(index)
+            polygons = dict(polygons, **self.compute_polygons(index))
 
         return polygons
 
@@ -101,12 +127,13 @@ class VertexGraph:
 
         epsilon = 1e-7
         polygons = self.compute_polygons(index)
-        a_coords = np.array(self.index_data[index])
+        a_coords = np.array(self.index_data[index].coords)
         Q_matrix = np.zeros((4, 4))
 
-        for _, b, c in polygons:
-            b_coords = np.array(self.index_data[b])
-            c_coords = np.array(self.index_data[c])
+        for polygon_data in polygons.values():
+            _, b, c = polygon_data["polygon"]
+            b_coords = np.array(self.index_data[b].coords)
+            c_coords = np.array(self.index_data[c].coords)
 
             ab = b_coords - a_coords
             ac = c_coords - a_coords
@@ -136,7 +163,7 @@ class VertexGraph:
         edge_pairs = set()
 
         for start in self.edges.keys():
-            x, y, z = self.index_data[start]
+            x, y, z = self.index_data[start].coords
 
             for neighbour in self.get_neighbours(start):
                 left = str(start) if str(start) < str(neighbour) else str(neighbour)
@@ -164,7 +191,7 @@ class VertexGraph:
 
             # Just use the midpoint initially to test it works
             is_invertible = np.abs(np.linalg.det(partial_derivatives)) > 1e-7 and inversion_enabled
-            v_bar = (np.array(self.index_data[a]) + np.array(self.index_data[b])) / 2
+            v_bar = (np.array(self.index_data[a].coords) + np.array(self.index_data[b].coords)) / 2
             v_bar = np.asmatrix(np.append(v_bar, 1)).T
 
             if is_invertible:
@@ -209,7 +236,7 @@ class VertexGraph:
 
         if show_vertices and label_vertices:
             for index in self.indices:
-                x, y, z = self.index_data[index]
+                x, y, z = self.index_data[index].coords
                 ax.text(x, y, z, str(index), color="k") # type: ignore
 
         print(f"Vertices: {len(self.index_data.keys())}")
@@ -220,7 +247,7 @@ class VertexGraph:
         z_scale = None
 
         for vertex in self.index_data.values():
-            x, y, z = vertex
+            x, y, z = vertex.coords
 
             if x_scale is None or np.abs(x) > x_scale:
                 x_scale = np.abs(x)
@@ -239,10 +266,10 @@ class VertexGraph:
             real_edge_count = 0
 
             for start in self.edges.keys():
-                x, y, z = self.index_data[start]
+                x, y, z = self.index_data[start].coords
 
                 for neighbour in self.get_neighbours(start):
-                    nx, ny, nz = self.index_data[neighbour]
+                    nx, ny, nz = self.index_data[neighbour].coords
                     real_edge_count += 1
 
                     left = str(start) if str(start) < str(neighbour) else str(neighbour)
