@@ -111,6 +111,38 @@ Object.keys(dists).forEach(key => {
 
 // scene.add(tableLod)
 
+const loader = new THREE.TextureLoader();
+// const mesh = pm.scratch()
+// pm.stepMesh();
+// load a resource
+const m = loader.load(
+    // resource URL
+    'models/custom/table/pm_reduced/pexels-fwstudio-129731.jpg',
+
+    // onLoad callback
+    function ( texture ) {
+        // in this example we create the material when the texture is loaded
+        const material = new THREE.MeshBasicMaterial( {
+            map: texture,
+            side: THREE.DoubleSide
+        } );
+
+        const pm = new ProgressiveMeshStreamingModel([], [], material)
+        scene.add(pm.mesh)
+        pm.startStepping(1)
+    },
+
+    // onProgress callback currently not supported
+    undefined,
+
+    // onError callback
+    function ( err ) {
+        console.error( 'An error happened.' );
+    }
+);
+
+console.log({m})
+
 const pmReducedTableLoader = new OBJLoader();
 const textureA = new THREE.TextureLoader().load( 'models/custom/table/pm_reduced/random.png' );
 pmReducedTableLoader.load(`models/custom/table/pm_reduced/model.obj`, (obj) => {
@@ -119,10 +151,7 @@ pmReducedTableLoader.load(`models/custom/table/pm_reduced/model.obj`, (obj) => {
     console.log(obj.children[0].geometry);
 }, undefined, console.error)
 
-const pm = new ProgressiveMeshStreamingModel([], [])
-// const mesh = pm.scratch()
-scene.add(pm.mesh)
-// pm.stepMesh();
+
 
 const animate = () => {
     requestAnimationFrame(animate)
@@ -140,6 +169,7 @@ const animate = () => {
     }
     
 }
+// pm.startStepping(1)
 
 const render = () => {
     renderer.render(scene, camera)
@@ -149,7 +179,6 @@ const render = () => {
     // pm.mesh.geometry.computeBoundingBox();
     // pm.mesh.geometry.computeBoundingSphere();
     // pm.stepMesh()
-    pm.stepMesh();
 }
 
 animate()
