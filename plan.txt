@@ -5,10 +5,25 @@ Network Streaming
 Dynamic Performance Optimisation
 - Set desired framerate
 - Anti-aliasing
+- Animation detail
+- Level of detail
+- Tracking FPS and render loop time
+- Dropdown selection
 
 Lighting
 Selective Refinement
+gltf compression
+
+
+Parametric surfaces and curves? 
 
 Progressive Mesh
 - Buffer Geometry with streaming would be really cool to try
 Level of Detail
+
+Animation
+- Parametric surfaces for trees
+- Human characters e.g. running or something? Skeletal Animation
+- Gates?
+
+Useful: https://attackingpixels.com/tips-tricks-optimizing-three-js-performance/

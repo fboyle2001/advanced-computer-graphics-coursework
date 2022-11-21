@@ -206,7 +206,9 @@ class VertexGraph:
                 smallest_error = quadric_error.item()
                 smallest_error_pair = (a, b)
         
-        assert smallest_error_pair is not None
+        if smallest_error_pair is None:
+            return False
+
         return smallest_error_pair
 
     def find_index_by_coords(self, coords):
