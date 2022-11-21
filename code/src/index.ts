@@ -127,9 +127,13 @@ const m = loader.load(
             side: THREE.DoubleSide
         } );
 
-        const pm = new ProgressiveMeshStreamingModel([], [], material)
+        const pm = new ProgressiveMeshStreamingModel([], [], null)
         scene.add(pm.mesh)
-        pm.startStepping(1)
+        const second = pm.mesh.clone();
+        scene.add(second)
+        second.position.set(1, 0, 0)
+        second.material = material;
+        pm.startStepping(50)
     },
 
     // onProgress callback currently not supported

@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any, Optional, Callable
 
 import time
 import json
@@ -21,7 +21,7 @@ class OBJModel:
     def write(self, include_reduction_record: bool) -> str:
         return write_obj_file(self, include_reduction_record)
 
-    def reduce(self, iterations: Optional[int], verbose: bool = False):
+    def reduce(self, iterations: Optional[int], stopping_condition: Optional[Callable[[int, int], bool]], verbose: bool = False):
         """
         1. Identify edge to collapse
         2. Find all polygons from each point on the edge and save them
@@ -29,67 +29,51 @@ class OBJModel:
         4. Repeat
         """
 
+        assert iterations is not None or stopping_condition is not None
+
         reduction_records = []
 
-        if iterations is None:
-            i = 0
-            while True:
-                i += 1
-                
-                if verbose:
-                    print(f"===Iteration {i + 1}===")
-                    print(f"Polygons: {len(self.graph.compute_all_polygons())}")
+        i = 0
+        while True:
+            i += 1
+            
+            if verbose:
+                print(f"===Iteration {i + 1}===")
+                print(f"Polygons: {len(self.graph.compute_all_polygons())}")
 
-                res = self.graph.determine_preferred_collapsible_edge()
+            res = self.graph.determine_preferred_collapsible_edge()
 
-                if not res:
+            if not res:
+                break
+
+            x, y = res
+
+            x_coords, y_coords = self.graph.index_data[x].coords, self.graph.index_data[y].coords
+            x_polygons = set([tuple(z["polygon"]) for z in self.graph.compute_polygons(x).values()])
+            y_polygons = set([tuple(z["polygon"]) for z in self.graph.compute_polygons(y).values()])
+            polygons = x_polygons | y_polygons
+            new_point = self.graph.collapse_edge(x, y)
+
+            reduction_records.append({
+                "i": i,
+                "mName": new_point,
+                "xName": x,
+                "xCoords": x_coords,
+                "yName": y,
+                "yCoords": y_coords,
+                "polygons": list(polygons)
+            })
+
+            if iterations is not None:
+                if i == iterations:
+                    print("Iteration condition reached")
                     break
 
-                x, y = res
-
-                x_coords, y_coords = self.graph.index_data[x].coords, self.graph.index_data[y].coords
-                x_polygons = set([tuple(z["polygon"]) for z in self.graph.compute_polygons(x).values()])
-                y_polygons = set([tuple(z["polygon"]) for z in self.graph.compute_polygons(y).values()])
-                polygons = x_polygons | y_polygons
-                new_point = self.graph.collapse_edge(x, y)
-
-                reduction_records.append({
-                    "i": i,
-                    "mName": new_point,
-                    "xName": x,
-                    "xCoords": x_coords,
-                    "yName": y,
-                    "yCoords": y_coords,
-                    "polygons": list(polygons)
-                })
-        else:
-            for i in range(iterations):
-                if verbose:
-                    print(f"===Iteration {i + 1}===")
-                    print(f"Polygons: {len(self.graph.compute_all_polygons())}")
-
-                res = self.graph.determine_preferred_collapsible_edge()
-
-                if not res:
+            if stopping_condition is not None:
+                total_polygons = len(self.graph.compute_all_polygons())
+                if stopping_condition(i, total_polygons):
+                    print("Stopping condition reached")
                     break
-
-                x, y = res
-
-                x_coords, y_coords = self.graph.index_data[x].coords, self.graph.index_data[y].coords
-                x_polygons = set([tuple(z["polygon"]) for z in self.graph.compute_polygons(x).values()])
-                y_polygons = set([tuple(z["polygon"]) for z in self.graph.compute_polygons(y).values()])
-                polygons = x_polygons | y_polygons
-                new_point = self.graph.collapse_edge(x, y)
-
-                reduction_records.append({
-                    "i": i,
-                    "mName": new_point,
-                    "xName": x,
-                    "xCoords": x_coords,
-                    "yName": y,
-                    "yCoords": y_coords,
-                    "polygons": list(polygons)
-                })
 
         self.reduction_records = reduction_records
     

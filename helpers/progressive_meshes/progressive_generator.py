@@ -1,8 +1,8 @@
-from obj_model import process_obj_file
+from obj_model import process_obj_file, write_obj_file
 
-def reduce_model(file_name, iterations=40):
+def reduce_model(file_name, iterations=40, stopping_condition=None):
     model = process_obj_file(file_name)
-    model.reduce(iterations, verbose=True)
+    model.reduce(iterations, stopping_condition, verbose=True)
 
     # print()
     # print(f"Start polygons: {start}")
@@ -23,14 +23,16 @@ def reproduce_model(file_name):
     new_file_name = model.write(include_reduction_record=False)
     print(f"Written file to {new_file_name}")
 
-file_name = "high.obj"
+file_name = "chair_max.obj"
 # reduce_model(file_name)
 
 # file_name = "original_reduced_1668696781.2866838.rr.obj"
 # reproduce_model(file_name)
 
 # model = process_obj_file(file_name)
-model = reduce_model(file_name, iterations=None)
-model.to_json(save="test_all.json")
+stopping_condition = lambda iterations, polygons: polygons < 10
+model = reduce_model(file_name, iterations=None, stopping_condition=stopping_condition) # type: ignore
+model.to_json(save="chair_10.json")
+write_obj_file(model, write_reduction_records=False)
 # print(model.reduction_records)
 # model.to_json(save="test_reduced.json")
