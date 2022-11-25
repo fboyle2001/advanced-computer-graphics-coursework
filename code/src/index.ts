@@ -3,7 +3,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import Stats from 'three/examples/jsm/libs/stats.module';
-import { ProgressiveMeshStreamingModel } from './pm_streamer';
+import { ProgressiveMeshModel } from './progressive_mesh';
+import chairModelData from './chair_50.json';
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -36,10 +37,8 @@ const plane = new THREE.Mesh(geometry, material);
 plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
 
-const wireframe = false;
-
 // const lampPostLoader = new GLTFLoader();
-// lampPostLoader.load("models/custom/table/high/model.gltf", (gltf) => {
+// lampPostLoader.load("models/custom/lamp_post/Lamp Post Coloured.gltf", (gltf) => {
 //     const model = gltf.scene;
 
 //     model.traverse( child => {
@@ -55,7 +54,7 @@ const wireframe = false;
     
 //     } );
 
-//     // scene.add(model);
+//     scene.add(model);
     
 // }, undefined, console.error);
 
@@ -100,6 +99,7 @@ Object.keys(dists).forEach(key => {
 
             // @ts-ignore
             if(child.isMesh) {
+                const wireframe=false;
                 // @ts-ignore
                 child.material.wireframe=wireframe;
             }
@@ -109,11 +109,12 @@ Object.keys(dists).forEach(key => {
     }, undefined, console.error);
 });
 
-// scene.add(tableLod)
+scene.add(tableLod)
+tableLod.position.set(0, 0, 5)
+
+const chairProgressiveMesh = new ProgressiveMeshModel(chairModelData.vertices, chairModelData.polygons, chairModelData.maximums.vertices, chairModelData.maximums.polygons)
 
 const loader = new THREE.TextureLoader();
-// const mesh = pm.scratch()
-// pm.stepMesh();
 // load a resource
 const m = loader.load(
     // resource URL
@@ -127,13 +128,15 @@ const m = loader.load(
             side: THREE.DoubleSide
         } );
 
-        const pm = new ProgressiveMeshStreamingModel([], [], null)
-        scene.add(pm.mesh)
-        const second = pm.mesh.clone();
+        scene.add(chairProgressiveMesh.createMesh(material))
+        
+        const materialTwo = new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THREE.DoubleSide });
+        
+        const second = chairProgressiveMesh.createMesh(materialTwo)
         scene.add(second)
         second.position.set(1, 0, 0)
-        second.material = material;
-        pm.startStepping(50)
+
+        chairProgressiveMesh.simulateNetworkDataArrival(chairModelData.reduction, 50);
     },
 
     // onProgress callback currently not supported
@@ -145,44 +148,30 @@ const m = loader.load(
     }
 );
 
-console.log({m})
+const updateStatsDisplay = () => {
+    if(document.getElementById("polygon_count") !== null) {
+        (document.getElementById("polygon_count") as HTMLElement).innerHTML = `${renderer.info.render.triangles}`;
+    }
 
-const pmReducedTableLoader = new OBJLoader();
-const textureA = new THREE.TextureLoader().load( 'models/custom/table/pm_reduced/random.png' );
-pmReducedTableLoader.load(`models/custom/table/pm_reduced/model.obj`, (obj) => {
-    console.log(obj);
-    //@ts-ignore
-    console.log(obj.children[0].geometry);
-}, undefined, console.error)
+    if(document.getElementById("texture_count") !== null) {
+        (document.getElementById("texture_count") as HTMLElement).innerHTML = `${renderer.info.memory.textures}`;
+    }
 
-
+    if(document.getElementById("geometry_count") !== null) {
+        (document.getElementById("geometry_count") as HTMLElement).innerHTML = `${renderer.info.memory.geometries}`;
+    }
+}
 
 const animate = () => {
     requestAnimationFrame(animate)
     controls.update()
     render()
     stats.update();
-    if(document.getElementById("polygon_count") !== null) {
-        (document.getElementById("polygon_count") as HTMLElement).innerHTML = `${renderer.info.render.triangles}`;
-    }
-    if(document.getElementById("texture_count") !== null) {
-        (document.getElementById("texture_count") as HTMLElement).innerHTML = `${renderer.info.memory.textures}`;
-    }
-    if(document.getElementById("geometry_count") !== null) {
-        (document.getElementById("geometry_count") as HTMLElement).innerHTML = `${renderer.info.memory.geometries}`;
-    }
-    
+    updateStatsDisplay()
 }
-// pm.startStepping(1)
 
 const render = () => {
     renderer.render(scene, camera)
-    // //@ts-ignore
-    // pm.mesh.geometry.needsUpdate = true;
-    // pm.mesh.geometry.attributes.position.needsUpdate = true;
-    // pm.mesh.geometry.computeBoundingBox();
-    // pm.mesh.geometry.computeBoundingSphere();
-    // pm.stepMesh()
 }
 
 animate()

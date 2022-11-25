@@ -120,8 +120,6 @@ class VertexGraph:
         for index in self.indices:
             polygons = dict(polygons, **self.compute_polygons(index))
 
-        print(len(polygons))
-
         return polygons
 
     def compute_vertex_quadric_matrix(self, index):
@@ -236,7 +234,7 @@ class VertexGraph:
         # Plot a 3D scatter of the vertices
         ax = fig.add_subplot(projection="3d")
         marker = "." if show_vertices else "None"
-        ax.scatter(*zip(*self.index_data.values()), marker=marker) # type: ignore
+        ax.scatter(*zip(*[vertex_data.coords for vertex_data in self.index_data.values()]), marker=marker) # type: ignore
 
         if show_vertices and label_vertices:
             for index in self.indices:

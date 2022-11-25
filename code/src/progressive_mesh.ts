@@ -1,8 +1,13 @@
 import * as THREE from 'three';
-import { BufferGeometry } from 'three';
-import testData from './chair_10.json';
+import { BufferGeometry, Material } from 'three';
+import { Logger } from './logger';
 
-interface ReductionData {
+interface VertexData {
+    name: string,
+    coords: number[]
+}
+
+interface ReductionRecord {
     i: number;
     mName: string;
     xName: string;
@@ -12,44 +17,46 @@ interface ReductionData {
     polygons: string[][];
 }
 
-class ProgressiveMeshStreamingModel {
+class ProgressiveMeshModel {
     vertexLimit: number;
     polygonLimit: number;
-    mesh: THREE.Mesh;
-    reductionData: ReductionData[];
+    reductionData: ReductionRecord[];
     vertexIndexMap: {[key: string]: number};
     nextVertexIndex: number;
     nextFaceIndex: number;
-    halted: boolean;
     reusableVertexIndices: number[];
     reusableFaceIndices: number[];
+    geometry: BufferGeometry;
 
-    constructor(initial_vertices: any, initial_faces: any, m: any) {
-        this.halted = false;
+    constructor(
+        initial_vertices: VertexData[], 
+        initial_faces: string[][],
+        max_vertices: number,
+        max_faces: number
+    ) {
+        console.log({initial_vertices})
+        console.log({initial_faces})
+
         this.reusableVertexIndices = [];
         this.reusableFaceIndices = [];
 
-        this.vertexLimit = testData.maximums.vertices + 1000;
-        this.polygonLimit = testData.maximums.polygons;
-        this.reductionData = testData.reduction;
+        this.vertexLimit = max_vertices;
+        this.polygonLimit = max_faces;
+        this.reductionData = [];
 
         const vertices = new Float32Array(this.vertexLimit * 3);
         const faces = new Uint16Array(this.polygonLimit * 3);
 
-        const geometry = new BufferGeometry(); 
-        geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3))
-        geometry.setIndex(new THREE.BufferAttribute(faces, 1))
-
-        const material = m ? m : new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THREE.DoubleSide });
-        material.wireframe = false;
-        this.mesh = new THREE.Mesh(geometry, material);
+        this.geometry = new BufferGeometry(); 
+        this.geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+        this.geometry.setIndex(new THREE.BufferAttribute(faces, 1));
 
         this.vertexIndexMap = {};
         let vertexIndex: number = 0;
-        let positions = this.mesh.geometry.attributes.position;
+        let positions = this.geometry.attributes.position;
 
-        for (const vertexData of testData.vertices) {
-            const [x, y, z]: number[] = vertexData.coords;
+        for (const vertexData of initial_vertices) {
+            const [x, y, z] = vertexData.coords;
             this.vertexIndexMap[vertexData.name] = vertexIndex;
             positions.setXYZ(vertexIndex, x, y, z);
             vertexIndex++;
@@ -57,7 +64,7 @@ class ProgressiveMeshStreamingModel {
 
         this.nextVertexIndex = vertexIndex;
 
-        let indices = this.mesh.geometry.index;
+        let indices = this.geometry.index;
 
         if(indices === null) {
             console.error("Null indices");
@@ -67,8 +74,8 @@ class ProgressiveMeshStreamingModel {
 
         let polygonIndex = 0;
 
-        for (const polygon of testData.polygons) {
-            const [a, b, c]: string[] = polygon;
+        for (const polygon of initial_faces) {
+            const [a, b, c] = polygon;
             // Must note that the vectors are defined as length one so setXYZ doesn't work!
             indices.setX(polygonIndex++, this.vertexIndexMap[a])
             indices.setX(polygonIndex++, this.vertexIndexMap[b])
@@ -78,25 +85,44 @@ class ProgressiveMeshStreamingModel {
         this.nextFaceIndex = polygonIndex;
 
         //@ts-ignore
-        this.mesh.geometry.index.needsUpdate = true;
-        this.mesh.geometry.attributes.position.needsUpdate = true;
-        this.mesh.geometry.computeBoundingBox();
-        this.mesh.geometry.computeBoundingSphere();
-        this.mesh.geometry.computeVertexNormals();
+        this.geometry.index.needsUpdate = true;
+        this.geometry.attributes.position.needsUpdate = true;
+        this.geometry.computeBoundingBox();
+        this.geometry.computeBoundingSphere();
+        this.geometry.computeVertexNormals();
     }
 
-    startStepping(delay: number) {
-        const autoStep = () => {
-            if(this.halted) {
+    createMesh(material: Material) {
+        return new THREE.Mesh(this.geometry, material);
+    }
+
+    addToReductionBuffer(record: ReductionRecord, stepImmediately: boolean = true) {
+        this.reductionData.push(record);
+
+        if(stepImmediately) {
+            this.stepMesh();
+        }
+    }
+
+    simulateNetworkDataArrival(records: ReductionRecord[], delayPerStep: number) {
+        const takeStep = () => {
+            if(!records || records.length === 0) {
                 return;
             }
 
+            const nextRecord = records.pop();
+
+            if(!nextRecord) {
+                return;
+            }
+
+            this.addToReductionBuffer(nextRecord);
             this.stepMesh();
 
-            setTimeout(autoStep, delay)
-        };
+            setTimeout(takeStep, delayPerStep);
+        }
 
-        autoStep();
+        takeStep();
     }
 
     addNewVertex(name: string, x: number, y: number, z: number) {
@@ -110,43 +136,38 @@ class ProgressiveMeshStreamingModel {
         }
 
         this.vertexIndexMap[name] = vertexIndex;
-        this.mesh.geometry.attributes.position.setXYZ(vertexIndex, x, y, z);
+        this.geometry.attributes.position.setXYZ(vertexIndex, x, y, z);
     }
 
-    stepMesh() {
-        if(this.halted) {
-            return;
-        }
-
+    stepMesh(): boolean {
         if(this.reductionData.length === 0) {
-            if(document.getElementById("pm_step") !== null) {
-                (document.getElementById("pm_step") as HTMLElement).innerHTML = `Done`;
-            }
-            return;
+            return false;
         }
 
         const record = this.reductionData.pop();
 
         if(!record) {
-            return;
-        }
-
-        if(document.getElementById("pm_step") !== null) {
-            (document.getElementById("pm_step") as HTMLElement).innerHTML = `${record.i}`;
+            return false;
         }
 
         const { mName, xName, xCoords, yName, yCoords, polygons } = record;
         const deletionVertexIndex = this.vertexIndexMap[mName];
+
+        // Delete the old vertex
+        this.geometry.attributes.position.setXYZ(deletionVertexIndex, 0, 0, 0);
+        // Including the next line breaks it?
+        // delete this.vertexIndexMap[deletionVertexIndex];
+        this.reusableVertexIndices.push(deletionVertexIndex);
 
         // Add the new vertices
         this.addNewVertex(xName, xCoords[0], xCoords[1], xCoords[2]);
         this.addNewVertex(yName, yCoords[0], yCoords[1], yCoords[2]);
 
         // Delete all faces related to the midpoint vertex
-        let indices = this.mesh.geometry.index;
+        let indices = this.geometry.index;
 
         if(indices === null) {
-            return;
+            return false;
         }
         
         for(let i = 0; i < indices.array.length; i++) {
@@ -187,19 +208,16 @@ class ProgressiveMeshStreamingModel {
             indices.setX(faceIndex + 2, realisedPolygon[2]);
         }
 
-        // Delete the old vertex
-        this.mesh.geometry.attributes.position.setXYZ(deletionVertexIndex, 0, 0, 0);
-        // Including the next line breaks it?
-        // delete this.vertexIndexMap[deletionVertexIndex];
-        this.reusableVertexIndices.push(deletionVertexIndex);
-
         //@ts-ignore
-        this.mesh.geometry.index.needsUpdate = true;
-        this.mesh.geometry.attributes.position.needsUpdate = true;
-        this.mesh.geometry.computeBoundingBox();
-        this.mesh.geometry.computeBoundingSphere();
-        this.mesh.geometry.computeVertexNormals();
+        this.geometry.index.needsUpdate = true;
+        this.geometry.attributes.position.needsUpdate = true;
+        this.geometry.computeBoundingBox();
+        this.geometry.computeBoundingSphere();
+        this.geometry.computeVertexNormals();
+
+        Logger.writeLine(`Completed iteration ${record.i}`);
+        return this.reductionData.length !== 0;
     }
 }
 
-export { ProgressiveMeshStreamingModel };
+export { ProgressiveMeshModel };

@@ -97,7 +97,7 @@ class OBJModel:
         self.already_reproduced = True
         self.reduction_records = []
 
-    def to_json(self, save=None):
+    def to_json(self, save=None, readable=True):
         geometry_data: Dict[str, Any] = {
             "maximums": {
                 "vertices": self.maximum_vertices,
@@ -132,8 +132,10 @@ class OBJModel:
         geometry_data["reduction"] = self.reduction_records
 
         if save:
+            indent = None if not readable else 2
+            
             with open(save, "w+") as fp:
-                json.dump(geometry_data, fp, indent=2)
+                json.dump(geometry_data, fp, indent=indent)
 
 def process_obj_file(file_name: str) -> OBJModel:
     graph = VertexGraph()
