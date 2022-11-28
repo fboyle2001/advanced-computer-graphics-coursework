@@ -8,7 +8,7 @@ https://sbcode.net/threejs
 const path = require('path')
 
 module.exports = {
-    entry: './src/main.ts',
+    entry: './src/experimental.ts',
     module: {
         rules: [
             {

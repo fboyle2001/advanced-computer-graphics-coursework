@@ -1,5 +1,19 @@
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
+const defaultPostLoad = (model: THREE.Group): void => {
+    model.traverse(child => {
+        // @ts-ignore
+        if ( child.material ) child.material.metalness = 0;
+
+        // @ts-ignore
+        if(child.isMesh) {
+            const wireframe = false;
+            // @ts-ignore
+            child.material.wireframe=wireframe;
+        }
+    });
+}
+
 class ModelLoader {
     scene: THREE.Scene;
     loaded: boolean;
@@ -9,9 +23,9 @@ class ModelLoader {
     type: string;
     postLoad: (model: THREE.Group) => void;
 
-    constructor(scene: THREE.Scene, file_location: string, postLoad: (model: THREE.Group) => void) {
+    constructor(scene: THREE.Scene, file_location: string, postLoad?: (model: THREE.Group) => void) {
         this.scene = scene;
-        this.postLoad = postLoad;
+        this.postLoad = postLoad ?? defaultPostLoad;
         this.loaded = false;
         this.object = undefined;
         this.file_location = file_location;
@@ -50,14 +64,12 @@ class ModelLoader {
     addToScene(postAdd: (model: THREE.Group) => void): void {
         if(!this.loaded || !this.object) {
             this.load_positions.push(postAdd);
-            console.log("Queued")
             return;
         }
 
         const instance = this.object.clone();
         this.scene.add(instance);
         postAdd(instance);
-        console.log("Added")
     }
 }
 
