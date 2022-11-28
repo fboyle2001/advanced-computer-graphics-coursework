@@ -5,6 +5,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import Stats from 'three/examples/jsm/libs/stats.module';
 import { ProgressiveMeshModel } from './progressive_mesh';
 import chairModelData from './chair_50.json';
+import { ModelLoader } from './loader';
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -37,39 +38,6 @@ const plane = new THREE.Mesh(geometry, material);
 plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
 
-// const lampPostLoader = new GLTFLoader();
-// lampPostLoader.load("models/custom/lamp_post/Lamp Post Coloured.gltf", (gltf) => {
-//     const model = gltf.scene;
-
-//     model.traverse( child => {
-
-//         // @ts-ignore
-//         if ( child.material ) child.material.metalness = 0;
-
-//         // @ts-ignore
-//         if(child.isMesh) {
-//             // @ts-ignore
-//             child.material.wireframe=wireframe;
-//         }
-    
-//     } );
-
-//     scene.add(model);
-    
-// }, undefined, console.error);
-
-const onWindowResize = () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    render();
-}
-
-window.addEventListener('resize', onWindowResize, false);
-
-// const directionalLight = new THREE.DirectionalLight(0xffffff, 4);
-// scene.add(directionalLight);
-
 const skyboxLoader = new THREE.TextureLoader();
 const texture = skyboxLoader.load(
     "FS002_Rainy.png", () => {
@@ -78,6 +46,50 @@ const texture = skyboxLoader.load(
         scene.background = rt.texture;
     }
 );
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.render(scene, camera);
+}, false);
+
+const updateStatsDisplay = () => {
+    if(document.getElementById("polygon_count") !== null) {
+        (document.getElementById("polygon_count") as HTMLElement).innerHTML = `${renderer.info.render.triangles}`;
+    }
+
+    if(document.getElementById("texture_count") !== null) {
+        (document.getElementById("texture_count") as HTMLElement).innerHTML = `${renderer.info.memory.textures}`;
+    }
+
+    if(document.getElementById("geometry_count") !== null) {
+        (document.getElementById("geometry_count") as HTMLElement).innerHTML = `${renderer.info.memory.geometries}`;
+    }
+}
+
+// const lamp = new ModelLoader(scene, "models/custom/lamp_post/Lamp Post Coloured.gltf", 
+//     model => {
+//         model.traverse(child => {
+//             // @ts-ignore
+//             if(child.material) {
+//                 // @ts-ignore
+//                 child.material.metalness = 0;
+//             }
+//         })
+//     }
+// );
+// lamp.addToScene(model => model.position.set(1, 0, 1));
+// lamp.addToScene(model => model.position.set(4, 0, 1));
+// lamp.load();
+// lamp.addToScene(model => model.position.set(1, 0, 4));
+
+
+
+// const directionalLight = new THREE.DirectionalLight(0xffffff, 4);
+// scene.add(directionalLight);
+
+
 
 const tableLod = new THREE.LOD();
 const dists = {
@@ -148,30 +160,26 @@ const m = loader.load(
     }
 );
 
-const updateStatsDisplay = () => {
-    if(document.getElementById("polygon_count") !== null) {
-        (document.getElementById("polygon_count") as HTMLElement).innerHTML = `${renderer.info.render.triangles}`;
+const classroomCreator = new ModelLoader(scene, `models/custom/classroom/model.gltf`, 
+    model => {
+        model.traverse(child => {
+            // @ts-ignore
+            if(child.material) {
+                // @ts-ignore
+                child.material.metalness = 0;
+            }
+        })
     }
-
-    if(document.getElementById("texture_count") !== null) {
-        (document.getElementById("texture_count") as HTMLElement).innerHTML = `${renderer.info.memory.textures}`;
-    }
-
-    if(document.getElementById("geometry_count") !== null) {
-        (document.getElementById("geometry_count") as HTMLElement).innerHTML = `${renderer.info.memory.geometries}`;
-    }
-}
+);
+classroomCreator.addToScene(m => m.position.set(5, 0, 0))
+classroomCreator.load();
 
 const animate = () => {
     requestAnimationFrame(animate)
     controls.update()
-    render()
+    renderer.render(scene, camera)
     stats.update();
     updateStatsDisplay()
-}
-
-const render = () => {
-    renderer.render(scene, camera)
 }
 
 animate()
