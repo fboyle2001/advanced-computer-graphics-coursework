@@ -57,9 +57,11 @@ const updateStatsDisplay = () => {
     }
 }
 
+const clock = new THREE.Clock();
+
 const animate = () => {
     requestAnimationFrame(animate)
-    controls.update()
+    controls.update();
     renderer.render(scene, camera)
     stats.update();
     updateStatsDisplay()

@@ -21,22 +21,27 @@ const defaultPostLoad = (model: THREE.Group): void => {
     });
 }
 
-const createLevelOfDetail = (config: LevelOfDetailConfiguration, postLoad?: (model: THREE.Group) => void): THREE.LOD => {
+const createLevelOfDetail = async (config: LevelOfDetailConfiguration, postLoad?: (model: THREE.Group) => void): Promise<THREE.LOD> => {
     // Requires GLTF model
     const lod = new THREE.LOD();
     const postLoadDefaulted = postLoad ?? defaultPostLoad;
 
-    Object.keys(config.distances).forEach(key => {
+    for(const key of Object.keys(config.distances)) {
         const distance = config.distances[key];
         const tableLoader = new GLTFLoader();
+
+        const gltf = await tableLoader.loadAsync(`${config.modelFolder}${key}/${config.modelName}`);
+        postLoadDefaulted(gltf.scene);
+        lod.addLevel(gltf.scene, distance);
 
         tableLoader.load(`${config.modelFolder}${key}/${config.modelName}`, (gltf) => {
             const model = gltf.scene;
             postLoadDefaulted(model);
             lod.addLevel(model, distance);
         }, undefined, console.error);
-    });
+    }
 
+    // Have to async/await due to the issues with cloning
     return lod;
 }
 

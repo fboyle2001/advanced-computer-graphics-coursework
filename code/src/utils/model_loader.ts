@@ -59,6 +59,42 @@ class ModelLoader {
                     });
                 }, undefined, console.error);
         }
+
+        this.loaded = true;
+    }
+
+    async loadAndBlock(): Promise<THREE.Group> {
+        if(this.loaded) {
+            return new Promise<THREE.Group>(() => this.object);
+        }
+
+        let model;
+
+        switch(this.type) {
+            case "gltf":
+                const gltf = await new GLTFLoader().loadAsync(this.file_location);
+                model = gltf.scene;
+        }
+
+        if(!model) {
+            throw new Error("Unable to load model");
+        }
+
+        this.postLoad(model);
+        this.object = model;
+
+        this.load_positions.forEach(callback => {
+            if(!this.object) {
+                return;
+            }
+
+            const instance = this.object.clone();
+            this.scene.add(instance);
+            callback(instance);
+        });
+
+        this.loaded = true;
+        return model;
     }
 
     addToScene(postAdd: (model: THREE.Group) => void): void {
@@ -70,6 +106,12 @@ class ModelLoader {
         const instance = this.object.clone();
         this.scene.add(instance);
         postAdd(instance);
+    }
+
+    addToSceneSynchronous() {
+        if(!this.loaded) {
+            throw new Error("Model needs to be loaded first");
+        }
     }
 }
 
