@@ -1,19 +1,21 @@
 Plan
-Dynamic Performance Optimisation
+Dynamic Performance Optimisation / Visual Quality Control
 - Target framerate
 - Anti-aliasing
 - Animation detail
 - Level of detail
-- Tracking FPS and render loop time
+- Tracking FPS and render loop time -> Average Meter
 - Dropdown selection
 
 Parametric surfaces and curves
-- ?
+- Trampoline with parametric deformation
+- Use a skeletal model to jump?
 
 Progressive Mesh
-- Buffer Geometry 
+- Buffer Geometry
 - Simulated network streaming
 - Combine with level of detail?
+- Create LoD dynamically?
 
 Level of Detail
 - Make basic model with a couple of level of details
@@ -21,9 +23,13 @@ Level of Detail
 Animation
 - Parametric surfaces for trees
 - Human characters e.g. running or something? Skeletal Animation
-- Gates?
+- Gates
+- Maybe a trampoline
 
 Useful: https://attackingpixels.com/tips-tricks-optimizing-three-js-performance/
 - Lighting
 - Selective Refinement
 - gltf compression
+
+Look back over demonstrations
+Combining techniques is important
