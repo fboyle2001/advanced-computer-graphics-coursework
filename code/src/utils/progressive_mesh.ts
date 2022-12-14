@@ -107,6 +107,12 @@ class ProgressiveMeshModel {
     simulateNetworkDataArrival(records: ReductionRecord[], delayPerStep: number) {
         const takeStep = () => {
             if(!records || records.length === 0) {
+                let toStep = false;
+
+                do {
+                    toStep = this.stepMesh();
+                } while (toStep);
+
                 return;
             }
 
@@ -117,7 +123,7 @@ class ProgressiveMeshModel {
             }
 
             this.addToReductionBuffer(nextRecord);
-            this.stepMesh();
+            // this.stepMesh();
 
             setTimeout(takeStep, delayPerStep);
         }

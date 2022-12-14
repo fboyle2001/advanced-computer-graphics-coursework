@@ -16,11 +16,11 @@ def reproduce_model(file_name):
 
 file_name = "chair_max.obj"
 
-stopping_condition = lambda iterations, polygons: polygons < 50
+stopping_condition = lambda iterations, polygons: polygons < 150
 
 model = process_obj_file(file_name)
 model.graph.display(label_vertices=False)
 model.reduce(iterations=None, stopping_condition=stopping_condition, verbose=True)
 model.graph.display()
-model.to_json(save="chair_50.json", readable=True)
+model.to_json(save="chair_test.json", readable=True)
 write_obj_file(model, write_reduction_records=True)
