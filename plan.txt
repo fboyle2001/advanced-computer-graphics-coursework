@@ -1,29 +1,69 @@
 Plan
-Dynamic Performance Optimisation
-- Target framerate
-- Anti-aliasing
-- Animation detail
-- Level of detail
-- Tracking FPS and render loop time
+Virtual Environment Construction
+- Custom models
+- SketchUp floor plan
+- Can use some Sketchfab models
+
+Application of multi-resolution modelling
+- Progressive meshes -> implement from scratch
+    - Network streaming
+    - Buffer geometry
+- Level of detail -> fairly basic to do in Three.js
+    - Could combine with progressive mesh?
+- Billboarding
+    - Could have some sort of clock tower?
+    - Trees can be billboarded
+        - Combine with LOD idea -> get closer then it becomes a polygon model?
+        - Would require re-implementing some Three.js stuff which is good
+- Optimised texture maps? Is this needed?
+- Selective refinement
+    - Already have fairly complex stuff in here maybe leave until the end if time?
+    - Similarish idea to progressive meshes
+    
+Application of parametric curves and surfaces
+- Can use for some basic animation
+    - e.g. trees swaying in the wind
+- Make a trampoline that deforms on the fly would be great
+    - Can have someone jumping on it with animations that deform the trampoline
+- Make some funky buildings e.g. curved canopy roof on the outside shack?
+- Earthquake with the grass field could be a cool application of deformation?
+- NURBS surfaces, could have doughnuts on the outside shack?
+- Resolution refinement -> hinted that this could be good to implement
+- Sea monster example
+
+Application of skeletal animation
+- Skeletal-rigged people that can wave or something like that
+    - Maybe a running or walking animation? ->  Path using parametric curves??
+    - Trampoline person
+- Keyframed animations -> parametric curves
+- Birds with FFD animated beaks? Probably not, doesn't really meet skeletal animation
+- Possible to skeletal rig a parametric surface model?
+- Could skeletal rig a bike or something
+- Download a skeletal rigged large monster or something?
+- Non-human rigged things could be more advanced
+- Kinematics
+    - Forward and inverse, animate using Three rather than Blender?
+    - Numerical methods, could potentially implement
+- Keyframing with poses -> interpolation
+
+Visual quality control
 - Dropdown selection
-
-Parametric surfaces and curves
-- ?
-
-Progressive Mesh
-- Buffer Geometry 
-- Simulated network streaming
-- Combine with level of detail?
-
-Level of Detail
-- Make basic model with a couple of level of details
-
-Animation
-- Parametric surfaces for trees
-- Human characters e.g. running or something? Skeletal Animation
-- Gates?
+- Level of Animation -> reduce detail
+- Level of Detail
+- Anti-aliasing
+    - Reduce to fit the hardware dynamically
+    - Use VRAM to determine which to apply?
+    - Could maybe implement a really simple AA and then use Three's versions?
+    - Stochastic sampling might be better
+- Dynamic adjustment using frame delta time?
+    - Tracking FPS and render loop time
+- Could use some form of directly calculated metric
+- Target framerate
 
 Useful: https://attackingpixels.com/tips-tricks-optimizing-three-js-performance/
 - Lighting
 - Selective Refinement
 - gltf compression
+
+Look back over demonstrations
+Combining techniques is important
