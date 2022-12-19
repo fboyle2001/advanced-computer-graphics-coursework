@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import Stats from 'three/examples/jsm/libs/stats.module';
+import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -67,4 +68,4 @@ const animate = () => {
     updateStatsDisplay()
 }
 
-export { renderer, scene, camera, animate };
+export { renderer, scene, camera, animate, controls, stats, updateStatsDisplay };

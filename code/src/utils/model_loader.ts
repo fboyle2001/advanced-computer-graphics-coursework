@@ -43,6 +43,7 @@ class ModelLoader {
         }
 
         switch(this.type) {
+            case "glb":
             case "gltf":
                 new GLTFLoader().load(this.file_location, (gltf) => {
                     this.object = gltf.scene;
@@ -71,6 +72,7 @@ class ModelLoader {
         let model;
 
         switch(this.type) {
+            case "glb":
             case "gltf":
                 const gltf = await new GLTFLoader().loadAsync(this.file_location);
                 model = gltf.scene;
