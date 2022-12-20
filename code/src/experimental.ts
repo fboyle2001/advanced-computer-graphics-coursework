@@ -4,9 +4,9 @@ import { ProgressiveMeshModel } from './utils/progressive_mesh';
 import chairModelData from './progressive_meshes/chair_50.json';
 import { ModelLoader } from './utils/model_loader';
 import { createLevelOfDetail } from './utils/level_of_detail';
-import { ParametricGeometry } from 'three/examples/jsm/geometries/ParametricGeometry';
+import { ParametricBufferGeometry, ParametricGeometry } from 'three/examples/jsm/geometries/ParametricGeometry';
 import { ParametricGeometries } from 'three/examples/jsm/geometries/ParametricGeometries';
-import { SkinnedMesh, Vector3 } from 'three';
+import { BufferGeometry, Mesh, Points, PointsMaterial, SkinnedMesh, Vector, Vector3 } from 'three';
 
 import { NURBSCurve } from 'three/examples/jsm/curves/NURBSCurve.js';
 import { NURBSSurface } from 'three/examples/jsm/curves/NURBSSurface.js';
@@ -29,11 +29,11 @@ const eps = () => (Math.random() + 1e-7) / 1e6;
 
 const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     // Setup the base plane
-    const flooorGeometry = new THREE.PlaneGeometry(20, 20);
-    const floorMaterial = new THREE.MeshPhongMaterial({ color: 0xEEEADE, side: THREE.DoubleSide });
-    const floor = new THREE.Mesh(flooorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
-    scene.add(floor);
+    // const flooorGeometry = new THREE.PlaneGeometry(20, 20);
+    // const floorMaterial = new THREE.MeshPhongMaterial({ color: 0xEEEADE, side: THREE.DoubleSide });
+    // const floor = new THREE.Mesh(flooorGeometry, floorMaterial);
+    // floor.rotation.x = -Math.PI / 2;
+    // scene.add(floor);
 
     /* LEVEL OF DETAIL */
     const levelOfDetailDistances = {
@@ -114,153 +114,49 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     clonedClassroom.position.set(5 + eps(), eps(), 0)
     // scene.add(clonedClassroom);
 
-    // Slide with Parametric Curve
-    // let slideCurve = new THREE.CubicBezierCurve3(
-    //     new Vector3(-4, 2, 0),
-    //     new Vector3(-4, -4, 0),
-    //     new Vector3(0.7, -3.5, 0),
-    //     new Vector3(4, -4, 0)
-    // );
+    // Parametric Plane
+    const paramGeom = new ParametricGeometry(
+        ParametricGeometries.plane(10, 10),
+        3, 3
+    )
 
-    // const geometry = new ParametricGeometries.TubeGeometry(slideCurve)
-    // const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
-    // const slide = new THREE.Mesh( geometry, material );
-    // slide.position.set(-3, 2, 0);
-    // slide.scale.set(0.4, 0.4, 0.4)
-    // scene.add( slide );
+    console.log(paramGeom.attributes.position)
+    paramGeom.attributes.position.setXYZ(5, 3.33, 2, 3.33);
+    paramGeom.attributes.position.setXYZ(6, 6.67, -2, 3.33);
+    paramGeom.attributes.position.setXYZ(9, 3.33, 2, 6.67);
+    paramGeom.attributes.position.setXYZ(10, 6.67, -2, 6.67);
 
-    // const nsControlPoints = [
-    //     [
-    //         new THREE.Vector4( - 200, - 200, 100, 1 ),
-    //         new THREE.Vector4( - 200, - 100, - 200, 1 ),
-    //         new THREE.Vector4( - 200, 100, 250, 1 ),
-    //         new THREE.Vector4( - 200, 200, - 100, 1 )
-    //     ],
-    //     [
-    //         new THREE.Vector4( 0, - 200, 0, 1 ),
-    //         new THREE.Vector4( 0, - 100, - 100, 5 ),
-    //         new THREE.Vector4( 0, 100, 150, 5 ),
-    //         new THREE.Vector4( 0, 200, 0, 1 )
-    //     ],
-    //     [
-    //         new THREE.Vector4( 200, - 200, - 100, 1 ),
-    //         new THREE.Vector4( 200, - 100, 200, 1 ),
-    //         new THREE.Vector4( 200, 100, - 250, 1 ),
-    //         new THREE.Vector4( 200, 200, 100, 1 )
-    //     ]
-    // ];
-    // const degree1 = 2;
-    // const degree2 = 3;
-    // const knots1 = [ 0, 0, 0, 1, 1, 1 ];
-    // const knots2 = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
-    // const nurbsSurface = new NURBSSurface( degree1, degree2, knots1, knots2, nsControlPoints );
 
-    // const map = new THREE.TextureLoader().load( 'textures/uv_grid_opengl.jpg' );
-    // map.wrapS = map.wrapT = THREE.RepeatWrapping;
-    // map.anisotropy = 16;
-
-    // function getSurfacePoint( u: number, v: number, target: Vector3 ) {
-    //     return nurbsSurface.getPoint( u, v, target );
-    // }
-
-    // const g = new ParametricGeometry( getSurfacePoint, 20, 20 );
-    // const m = new THREE.MeshLambertMaterial( { map: map, side: THREE.DoubleSide } );
-    // const object = new THREE.Mesh( g, m );
-    // object.position.set( 0, 0, 0 );
-    // scene.add(object)
-
-    // const humanoidLoader = await new GLTFLoader().loadAsync(`models/custom/basic_humanoid/rigged_basic.glb`);
-    // const humanoid = humanoidLoader.scene;
-    // let skinnedT = null;
-
-    // humanoid.traverse(x => {
-    //     // @ts-ignore
-    //     if(x.isSkinnedMesh) {
-    //         skinnedT = x;
-    //     }
-    // })
-
-    // if(!skinnedT) {
-    //     return;
-    // }
-
-    // const skinned: SkinnedMesh = skinnedT;
-    // const skeleton = skinned.skeleton;
-    // console.log({skinned, skeleton})
-
+    const map = new THREE.TextureLoader().load(
+        "https://threejs.org/examples/textures/uv_grid_opengl.jpg"
+      );
+      map.wrapS = map.wrapT = THREE.RepeatWrapping;
+      map.anisotropy = 16;
     
+      const material = new THREE.MeshPhongMaterial({
+        map: map,
+        side: THREE.DoubleSide
+      });
 
-    // humanoid.position.set(1, 1, 1);
-    // scene.add(humanoid);
+    const paramObj = new Mesh(paramGeom, material)
+    scene.add(paramObj)
 
-    // const skeletonHelper = new THREE.SkeletonHelper(humanoid);
-    // skeletonHelper.visible = true;
-    // scene.add(skeletonHelper);
+    const pos = paramObj.geometry.attributes.position; // want 5th point
+    let points = [];
 
-    // // const humanoidLoader = new ModelLoader(scene, `models/custom/basic_humanoid/rigged_basic.glb`);
-    // // await humanoidLoader.loadAndBlock();
-    // // humanoidLoader.addToScene(m => {
-    // //     m.position.set(0, 1, 0);
-    // //     console.log(m)
-    // //     m.visible = false;
-    // //     const skeletonHelper = new THREE.SkeletonHelper(m);
-    // //     skeletonHelper.visible = true;
-    // //     scene.add(skeletonHelper);
-    // // });
-
-    
-    // skeleton.bones[8].rotation.x += 0.8;
-    // skeleton.bones[12].rotation.x += 0.8;
-
-    const skeletalModel = await SkeletalModel.createSkeletalModel(`models/custom/basic_humanoid/rigged_basic_targets.glb`);
-    skeletalModel.addToScene(scene);
-    skeletalModel.setSkeletonVisible(true);
-
-    const targetBone = skeletalModel.getBone("upper_armL").clone()
-    targetBone.position.y += 4;
-
-    console.log(skeletalModel.skeleton)
-    // skeletalModel.getBone("upper_armL").rotation.x += 0.3;
-
-    console.log(skeletalModel.getBoneNames())
-    console.log(skeletalModel.getSkeletonHierarchy())
-
-    // skeletalModel.addBone("upper_armL", targetBone, "upper_armL_target");
-
-
-    // skeletalModel.getBone("handL_target_1").rotation.x += 0.1;
-    skeletalModel.getBone("handL_target_1").position.y += 0.5;
-
-    const ikSolver = new CCDIKSolver(skeletalModel.skinned_mesh, [
-        {
-            "effector": 10,
-            "iteration": 10,
-            // @ts-ignore
-            "links": [{index: 9}, {index: 8}, {index: 7}],
-            "maxAngle": 0.0001,
-            "target": 29
-        }
-    ]);
-
-    let dir = -1;
-
-    return () => {
-        ikSolver.update();
-
-        if(skeletalModel.getBone("handL_target_1").position.y >= 0.75) {
-            dir = -1;
-        } else if (skeletalModel.getBone("handL_target_1").position.y <= 0.15) {
-            dir = 1;
-        }
-        skeletalModel.getBone("handL_target_1").position.y += dir * 0.001;
-        // 0.15 to 0.75
-        // console.log(skeletalModel.getBone("handL_target_1").position)
-        // skeletalModel.getBone("upper_armL").position.y += 0.001;
+    for(let i = 0; i < pos.count; i++) {
+        let point = new Vector3().fromBufferAttribute(pos, i);
+        console.log({i, point})
+        paramObj.localToWorld(point)
+        points.push(point);
     }
+
+    const pointsGeom = new BufferGeometry().setFromPoints(points);
+    const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xFFFFFF, size: 0.2 }))
+    scene.add(pointsMesh)
+
+    return () => {}
 }
-
-
-
 
 const animate = (x: () => void) => {
     requestAnimationFrame(() => animate(x));
