@@ -65,5 +65,7 @@ control_points = np.array(
     ]
 )
 
+print(control_points.shape)
+
 surface = generate_bezier_surface(control_points, 40)
 plot_surface(surface)

@@ -14,6 +14,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { SkeletalModel } from './utils/skeletal_model';
 
 import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
+import { BezierSurface } from './utils/bezier_surface';
+import { createPointMesh } from './utils/points_util';
 
 /* CONFIGURATION */
 // Config this to simulate network arrival
@@ -136,6 +138,24 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         map: map,
         side: THREE.DoubleSide
       });
+
+    const controlPoints = [
+        [new Vector3(1.8, -0.3, 0.), new Vector3(1.8, 0.13, 0.1), new Vector3(1.8, 0.5, 0.)],
+        [new Vector3(2., -0.3, 0.06), new Vector3(2.1, 0.1, 0.1), new Vector3(2.1, 0.5, 0.1)],
+        [new Vector3(2.3, -0.3, 0.1), new Vector3(2.3, 0.13, 0.2), new Vector3(2.3, 0.5, 0.1)],
+        [new Vector3(2.4, -0.3, 0.1), new Vector3(2.5, 0.1, 0.15), new Vector3(2.5, 0.5, 0.1)],
+        [new Vector3(2.6, -0.3, 0.), new Vector3(2.6, 0.1, 0.1), new Vector3(2.5, 0.5, 0.)]
+    ]
+
+    const bezierSurface = new BezierSurface(controlPoints);
+    const bezierMesh = new Mesh(bezierSurface.createGeometry(40), material);
+    scene.add(bezierMesh);
+
+    const bezierGridMesh = createPointMesh(bezierMesh, 0.01);
+    scene.add(bezierGridMesh);
+
+    const bezierControlMesh = bezierSurface.createControlPointGrid(0.05);
+    scene.add(bezierControlMesh);
 
     return () => {}
 }
