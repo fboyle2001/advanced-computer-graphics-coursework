@@ -140,15 +140,15 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
       });
 
     const controlPoints = [
-        [new Vector3(1.8, -0.3, 0.), new Vector3(1.8, 0.13, 0.1), new Vector3(1.8, 0.5, 0.)],
-        [new Vector3(2., -0.3, 0.06), new Vector3(2.1, 0.1, 0.1), new Vector3(2.1, 0.5, 0.1)],
-        [new Vector3(2.3, -0.3, 0.1), new Vector3(2.3, 0.13, 0.2), new Vector3(2.3, 0.5, 0.1)],
-        [new Vector3(2.4, -0.3, 0.1), new Vector3(2.5, 0.1, 0.15), new Vector3(2.5, 0.5, 0.1)],
-        [new Vector3(2.6, -0.3, 0.), new Vector3(2.6, 0.1, 0.1), new Vector3(2.5, 0.5, 0.)]
+        [new Vector3(0, 0, 0), new Vector3(0, 2, 0), new Vector3(0, 4, 0)],
+        [new Vector3(1, 0, 0), new Vector3(1, 2, 0), new Vector3(1, 4, 0)],
+        [new Vector3(2, 0, 0), new Vector3(2, 2, 0), new Vector3(2, 4, 0)],
+        [new Vector3(3, 0, 0), new Vector3(3, 2, 0), new Vector3(3, 4, 0)],
+        [new Vector3(4, 0, 0), new Vector3(4, 2, 0), new Vector3(4, 4, 0)]
     ]
 
     const bezierSurface = new BezierSurface(controlPoints);
-    const bezierMesh = new Mesh(bezierSurface.createGeometry(40), material);
+    const bezierMesh = new Mesh(bezierSurface.createGeometry(4), material);
     scene.add(bezierMesh);
 
     const bezierGridMesh = createPointMesh(bezierMesh, 0.01);
