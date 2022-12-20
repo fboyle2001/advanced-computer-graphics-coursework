@@ -128,27 +128,33 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     // paramGeom.attributes.position.setXYZ(9, 3.33, 2, 6.67);
     // paramGeom.attributes.position.setXYZ(10, 6.67, -2, 6.67);
 
-    const map = new THREE.TextureLoader().load(
-        "https://threejs.org/examples/textures/uv_grid_opengl.jpg"
-      );
-      map.wrapS = map.wrapT = THREE.RepeatWrapping;
-      map.anisotropy = 16;
+    const gridMap = new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg");
+    gridMap.wrapS = gridMap.wrapT = THREE.RepeatWrapping;
+    gridMap.anisotropy = 16;
     
-      const material = new THREE.MeshPhongMaterial({
-        map: map,
+    const gridMaterial = new THREE.MeshPhongMaterial({
+        map: gridMap,
         side: THREE.DoubleSide
-      });
+    });
+
+    const flatControlPoints = [
+        [new Vector3(0, 0, 0), new Vector3(0, 0, 2), new Vector3(0, 0, 4)],
+        [new Vector3(1, 0, 0), new Vector3(1, 0, 2), new Vector3(1, 0, 4)],
+        [new Vector3(2, 0, 0), new Vector3(2, 0, 2), new Vector3(2, 0, 4)],
+        [new Vector3(3, 0, 0), new Vector3(3, 0, 2), new Vector3(3, 0, 4)],
+        [new Vector3(4, 0, 0), new Vector3(4, 0, 2), new Vector3(4, 0, 4)]
+    ]
 
     const controlPoints = [
-        [new Vector3(0, 0, 0), new Vector3(0, 2, 0), new Vector3(0, 4, 0)],
-        [new Vector3(1, 0, 0), new Vector3(1, 2, 0), new Vector3(1, 4, 0)],
-        [new Vector3(2, 0, 0), new Vector3(2, 2, 0), new Vector3(2, 4, 0)],
-        [new Vector3(3, 0, 0), new Vector3(3, 2, 0), new Vector3(3, 4, 0)],
-        [new Vector3(4, 0, 0), new Vector3(4, 2, 0), new Vector3(4, 4, 0)]
+        [new Vector3(0, 0, 0), new Vector3(0, 0, 2), new Vector3(0, 0, 4)],
+        [new Vector3(1, 0, 0), new Vector3(1, -1, 2), new Vector3(1, -0, 4)],
+        [new Vector3(2, -1, 0), new Vector3(2, -2, 2), new Vector3(2, -1, 4)],
+        [new Vector3(3, 0, 0), new Vector3(3, -1, 2), new Vector3(3, 0, 4)],
+        [new Vector3(4, 0, 0), new Vector3(4, 0, 2), new Vector3(4, 0, 4)]
     ]
 
     const bezierSurface = new BezierSurface(controlPoints);
-    const bezierMesh = new Mesh(bezierSurface.createGeometry(4), material);
+    const bezierMesh = new Mesh(bezierSurface.createGeometry(4), gridMaterial);
     scene.add(bezierMesh);
 
     const bezierGridMesh = createPointMesh(bezierMesh, 0.01);
@@ -157,7 +163,20 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     const bezierControlMesh = bezierSurface.createControlPointGrid(0.05);
     scene.add(bezierControlMesh);
 
-    return () => {}
+    let track = 0;
+    let dir = 1;
+
+    return () => {
+        track += dir * 0.01;
+
+        if(track > 3 || track < -1) {
+            dir *= -1;
+        }
+
+        bezierMesh.geometry.attributes.position.setXYZ(12, 2, -(2 + track), 2);
+        bezierMesh.geometry.attributes.position.needsUpdate = true;
+        //bezierMesh.geometry.attributes.index.needsUpdate = true;
+    }
 }
 
 const animate = (x: () => void) => {
