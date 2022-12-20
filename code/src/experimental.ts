@@ -240,11 +240,21 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
             "maxAngle": 0.0001,
             "target": 29
         }
-    ])
+    ]);
+
+    let dir = -1;
 
     return () => {
         ikSolver.update();
-        skeletalModel.getBone("handL_target_1").position.y -= 0.001;
+
+        if(skeletalModel.getBone("handL_target_1").position.y >= 0.75) {
+            dir = -1;
+        } else if (skeletalModel.getBone("handL_target_1").position.y <= 0.15) {
+            dir = 1;
+        }
+        skeletalModel.getBone("handL_target_1").position.y += dir * 0.001;
+        // 0.15 to 0.75
+        // console.log(skeletalModel.getBone("handL_target_1").position)
         // skeletalModel.getBone("upper_armL").position.y += 0.001;
     }
 }
