@@ -6,7 +6,7 @@ import { ModelLoader } from './utils/model_loader';
 import { createLevelOfDetail } from './utils/level_of_detail';
 import { ParametricBufferGeometry, ParametricGeometry } from 'three/examples/jsm/geometries/ParametricGeometry';
 import { ParametricGeometries } from 'three/examples/jsm/geometries/ParametricGeometries';
-import { BufferGeometry, Mesh, Points, PointsMaterial, SkinnedMesh, Vector, Vector3 } from 'three';
+import { BufferGeometry, Mesh, Points, PointsMaterial, SkinnedMesh, Vector, Vector3, Vector4 } from 'three';
 
 import { NURBSCurve } from 'three/examples/jsm/curves/NURBSCurve.js';
 import { NURBSSurface } from 'three/examples/jsm/curves/NURBSSurface.js';
@@ -115,17 +115,16 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     // scene.add(clonedClassroom);
 
     // Parametric Plane
-    const paramGeom = new ParametricGeometry(
-        ParametricGeometries.plane(10, 10),
-        3, 3
-    )
+    // const paramGeom = new ParametricGeometry(
+    //     ParametricGeometries.plane(10, 10),
+    //     3, 3
+    // )
 
-    console.log(paramGeom.attributes.position)
-    paramGeom.attributes.position.setXYZ(5, 3.33, 2, 3.33);
-    paramGeom.attributes.position.setXYZ(6, 6.67, -2, 3.33);
-    paramGeom.attributes.position.setXYZ(9, 3.33, 2, 6.67);
-    paramGeom.attributes.position.setXYZ(10, 6.67, -2, 6.67);
-
+    // console.log(paramGeom.attributes.position)
+    // paramGeom.attributes.position.setXYZ(5, 3.33, 2, 3.33);
+    // paramGeom.attributes.position.setXYZ(6, 6.67, -2, 3.33);
+    // paramGeom.attributes.position.setXYZ(9, 3.33, 2, 6.67);
+    // paramGeom.attributes.position.setXYZ(10, 6.67, -2, 6.67);
 
     const map = new THREE.TextureLoader().load(
         "https://threejs.org/examples/textures/uv_grid_opengl.jpg"
@@ -137,23 +136,6 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         map: map,
         side: THREE.DoubleSide
       });
-
-    const paramObj = new Mesh(paramGeom, material)
-    scene.add(paramObj)
-
-    const pos = paramObj.geometry.attributes.position; // want 5th point
-    let points = [];
-
-    for(let i = 0; i < pos.count; i++) {
-        let point = new Vector3().fromBufferAttribute(pos, i);
-        console.log({i, point})
-        paramObj.localToWorld(point)
-        points.push(point);
-    }
-
-    const pointsGeom = new BufferGeometry().setFromPoints(points);
-    const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xFFFFFF, size: 0.2 }))
-    scene.add(pointsMesh)
 
     return () => {}
 }
