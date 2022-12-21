@@ -12,7 +12,7 @@ document.body.appendChild(stats.dom);
 
 const scene = new THREE.Scene();
 
-const light = new THREE.AmbientLight(0xffffff, 1);
+const light = new THREE.AmbientLight(0xFFFFFF, 1);
 scene.add(light);
 
 const camera = new THREE.PerspectiveCamera(

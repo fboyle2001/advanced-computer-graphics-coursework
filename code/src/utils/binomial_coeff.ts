@@ -1,5 +1,5 @@
 // Full credit: Mike 'Pomax' Kamermans https://stackoverflow.com/a/37716142
-
+// Minorly adapted to work with TypeScript
 // step 1: a basic LUT with a few steps of Pascal's triangle
 const binomials = [
     [1],

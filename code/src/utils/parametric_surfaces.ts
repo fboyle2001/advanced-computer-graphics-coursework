@@ -2,7 +2,7 @@ import { BufferGeometry, Matrix4, Points, PointsMaterial, Vector3, Vector4 } fro
 import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry";
 import { binomial } from "./binomial_coeff";
 
-const bernsteinBasisPolynomial = (n: number, i: number): ((t: number) => number) => {
+const bernsteinBasis = (n: number, i: number): ((t: number) => number) => {
     return (t: number) => binomial(n, i) * (t ** i) * ((1 - t) ** (n - i));
 }
 
@@ -20,14 +20,14 @@ class BezierSurface {
         this.m_basis = [];
 
         for(let i = 0; i < this.m; i++) {
-            this.m_basis.push(bernsteinBasisPolynomial(this.m - 1, i));
+            this.m_basis.push(bernsteinBasis(this.m - 1, i));
         }
 
         this.n = control_points[0].length;
         this.n_basis = [];
 
         for(let j = 0; j < this.n; j++) {
-            this.n_basis.push(bernsteinBasisPolynomial(this.n - 1, j));
+            this.n_basis.push(bernsteinBasis(this.n - 1, j));
         }
     }
 
