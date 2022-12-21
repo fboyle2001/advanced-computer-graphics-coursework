@@ -6,14 +6,14 @@ import { ModelLoader } from './utils/model_loader';
 import { createLevelOfDetail } from './utils/level_of_detail';
 import { ParametricBufferGeometry, ParametricGeometry } from 'three/examples/jsm/geometries/ParametricGeometry';
 import { ParametricGeometries } from 'three/examples/jsm/geometries/ParametricGeometries';
-import { BufferGeometry, Mesh, Points, PointsMaterial, SkinnedMesh, Vector, Vector3, Vector4 } from 'three';
+import { BufferGeometry, Clock, Mesh, Points, PointsMaterial, SkinnedMesh, Vector, Vector3, Vector4 } from 'three';
 
 import { NURBSSurface as DefaultNURBS } from 'three/examples/jsm/curves/NURBSSurface.js';
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { SkeletalModel } from './utils/skeletal_model';
 
 import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
-import { BezierSurface, BSplineSurface, NURBSSurface } from './utils/parametric_surfaces';
+import { BezierSurface, BSplineSurface, NURBSSurface, EditableNURBSSurface } from './utils/parametric_surfaces';
 import { createPointMesh } from './utils/points_util';
 
 /* CONFIGURATION */
@@ -169,9 +169,11 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     const q = 3;
     const samples = 40;
 
-    const nurbsSurface = new NURBSSurface(nsControlPoints, p, q, U, V);
-    const nurbsMesh = new Mesh(nurbsSurface.createGeometry(samples), gridMaterial);
-    scene.add(nurbsMesh);
+    const nurbsSurface = new EditableNURBSSurface(nsControlPoints, p, q, U, V, samples);
+    // const nurbsMesh = new Mesh(nurbsSurface.createGeometry(samples), gridMaterial);
+    // scene.add(nurbsMesh);
+    const editableNurbsSurface = nurbsSurface.createDynamicMesh(gridMaterial);
+    scene.add(editableNurbsSurface);
 
     // const defNurbsSurface = new DefaultNURBS(p, q, U, V, nsControlPoints);
 
@@ -186,13 +188,30 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     // object.position.set(5, 0, 0);
     // scene.add(object);
 
-    const nurbsGridMesh = createPointMesh(nurbsMesh, 0.05);
-    scene.add(nurbsGridMesh);
+    // const nurbsGridMesh = createPointMesh(nurbsMesh, 0.05);
+    // scene.add(nurbsGridMesh);
 
-    const nurbsControlMesh = nurbsSurface.createControlPointGrid(0.2);
-    scene.add(nurbsControlMesh);
+    // const nurbsControlMesh = nurbsSurface.createControlPointGrid(0.2);
+    // scene.add(nurbsControlMesh);
+    const clock = new Clock();
+    let last = 0;
+    const updatesPerSecond = 5;
+    const maxUpdates = 40;
 
-    return () => {};
+    return () => {
+        if(last >= maxUpdates) {
+            return;
+        }
+
+        // if(Math.round(clock.getElapsedTime() * updatesPerSecond) > last) {
+        //     last += 1;
+        //     nurbsSurface.updateControlPoint(1, 1, new Vector4(1, -1, 1, -1 + clock.getElapsedTime() / 10))
+        //     nurbsSurface.updateDynamicMeshes();
+        // }
+
+        // nurbsSurface.updateControlPoint(1, 1, new Vector4(1, -1, 1, -1 + clock.getElapsedTime() / 10))
+        // nurbsSurface.updateDynamicMeshes();
+    };
 }
 
 const animate = (x: () => void) => {

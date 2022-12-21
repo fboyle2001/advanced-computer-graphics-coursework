@@ -1,4 +1,4 @@
-import { BufferGeometry, Matrix4, Points, PointsMaterial, Vector3, Vector4 } from "three";
+import { BufferGeometry, Material, Matrix4, Mesh, Points, PointsMaterial, Scene, Vector3, Vector4 } from "three";
 import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry";
 import { binomial } from "./binomial_coeff";
 
@@ -168,4 +168,46 @@ class NURBSSurface {
     }
 }
 
-export { BezierSurface, BSplineSurface, NURBSSurface };
+class EditableNURBSSurface {
+    surface: NURBSSurface;
+    known_meshes: Mesh[];
+    samples: number;
+    created_geometries: BufferGeometry[];
+
+    constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[], samples: number) {
+        this.surface = new NURBSSurface(control_points, p, q, U, V);
+        this.samples = samples;
+        this.known_meshes = [];
+        this.created_geometries = [];
+    }
+
+    createDynamicMesh(material: Material) {
+        const newGeometry = this.surface.createGeometry(this.samples);
+        this.created_geometries.push(newGeometry)
+        const mesh = new Mesh(newGeometry, material);
+        this.known_meshes.push(mesh);
+        return mesh;
+    }
+
+    updateControlPoint = (i: number, j: number, target: Vector4) => {
+        this.surface.control_points[i][j] = target;
+    }
+
+    updateSampleResolution = (samples: number) => {
+        this.samples = samples;
+    }
+
+    updateDynamicMeshes = () => {
+        const updatedGeometry = this.surface.createGeometry(this.samples);
+
+        this.known_meshes.forEach(mesh => {
+            mesh.geometry = updatedGeometry;
+            mesh.geometry.attributes.position.needsUpdate = true;
+        });
+
+        this.created_geometries.forEach(geom => geom.dispose());
+        this.created_geometries.push(updatedGeometry);
+    }
+}
+
+export { BezierSurface, BSplineSurface, NURBSSurface, EditableNURBSSurface };
