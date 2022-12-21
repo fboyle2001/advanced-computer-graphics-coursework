@@ -8,13 +8,12 @@ import { ParametricBufferGeometry, ParametricGeometry } from 'three/examples/jsm
 import { ParametricGeometries } from 'three/examples/jsm/geometries/ParametricGeometries';
 import { BufferGeometry, Mesh, Points, PointsMaterial, SkinnedMesh, Vector, Vector3, Vector4 } from 'three';
 
-import { NURBSCurve } from 'three/examples/jsm/curves/NURBSCurve.js';
-import { NURBSSurface } from 'three/examples/jsm/curves/NURBSSurface.js';
+import { NURBSSurface as DefaultNURBS } from 'three/examples/jsm/curves/NURBSSurface.js';
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { SkeletalModel } from './utils/skeletal_model';
 
 import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
-import { BezierSurface, BSplineSurface } from './utils/parametric_surfaces';
+import { BezierSurface, BSplineSurface, NURBSSurface } from './utils/parametric_surfaces';
 import { createPointMesh } from './utils/points_util';
 
 /* CONFIGURATION */
@@ -137,30 +136,55 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         side: THREE.DoubleSide
     });
 
-    const control_points = [
-        [new Vector3(2.0, 8.0, 1.0), new Vector3(2.5, 7.8, 2.0), new Vector3(3.0, 7.6, 3.0), new Vector3(4.0, 7.4, 4.0), new Vector3(5.2, 7.1, 5.0), new Vector3(4.8, 6.9, 6.0)],
-        [new Vector3(1.7, 7.0, 0.0), new Vector3(2.3, 6.9, 0.0), new Vector3(2.8, 6.8, 0.0), new Vector3(3.7, 6.5, 0.0), new Vector3(4.9, 6.2, 0.0), new Vector3(4.5, 5.9, 0.0)],
-        [new Vector3(1.3, 5.7, 0.0), new Vector3(2.1, 5.7, 0.0), new Vector3(2.6, 5.7, 0.0), new Vector3(3.8, 5.6, 0.0), new Vector3(4.6, 5.3, 0.0), new Vector3(4.8, 5.4, 0.0)],
-        [new Vector3(1.2, 5.0, 0.0), new Vector3(1.8, 4.9, 0.0), new Vector3(2.5, 4.9, 0.0), new Vector3(3.7, 4.8, 0.0), new Vector3(4.5, 4.6, 0.0), new Vector3(4.7, 4.4, 0.0)],
-        [new Vector3(0.8, 3.8, 0.0), new Vector3(1.4, 3.9, 0.0), new Vector3(2.2, 3.8, 0.0), new Vector3(3.4, 3.3, 0.0), new Vector3(4.3, 2.5, 0.0), new Vector3(4.8, 2.1, 0.0)],
-        [new Vector3(0.5, 3.0, 0.0), new Vector3(1.2, 3.3, 0.0), new Vector3(1.8, 3.4, 0.0), new Vector3(3.0, 3.0, 0.0), new Vector3(4.0, 1.5, 0.0), new Vector3(4.8, 0.0, 0.0)],
+    const nsControlPoints = [
+        [
+            new THREE.Vector4( - 2, - 2, 1, 1 ),
+            new THREE.Vector4( - 2, - 1, - 2, 1 ),
+            new THREE.Vector4( - 2, 1, 2.5, 1 ),
+            new THREE.Vector4( - 2, 2, - 1, 1 )
+        ],
+        [
+            new THREE.Vector4( 0, - 2, 0, 1 ),
+            new THREE.Vector4( 0, - 1, - 1, 5 ),
+            new THREE.Vector4( 0, 1, 1.5, 5 ),
+            new THREE.Vector4( 0, 2, 0, 1 )
+        ],
+        [
+            new THREE.Vector4( 2, - 2, - 1, 1 ),
+            new THREE.Vector4( 2, - 1, 2, 1 ),
+            new THREE.Vector4( 2, 1, - 2.5, 1 ),
+            new THREE.Vector4( 2, 2, 1, 1 )
+        ]
     ];
-
-    const U = [0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1];
-    const V = [0, 0, 0, 0, 0.33, 0.66, 1, 1, 1, 1];
+    
+    const U = [ 0, 0, 0, 1, 1, 1 ];
+    const V = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
     const p = 2;
     const q = 3;
-    const samples = 4;
+    const samples = 40;
 
-    const bSplineSurface = new BSplineSurface(control_points, p, q, U, V);
-    const bSplineMesh = new Mesh(bSplineSurface.createGeometry(samples), gridMaterial);
-    scene.add(bSplineMesh);
+    const nurbsSurface = new NURBSSurface(nsControlPoints, p, q, U, V);
+    const nurbsMesh = new Mesh(nurbsSurface.createGeometry(samples), gridMaterial);
+    scene.add(nurbsMesh);
 
-    const bSplineGridMesh = createPointMesh(bSplineMesh, 0.2);
-    scene.add(bSplineGridMesh);
+    const defNurbsSurface = new DefaultNURBS(p, q, U, V, nsControlPoints);
 
-    const bSplineControlMesh = bSplineSurface.createControlPointGrid(0.2);
-    scene.add(bSplineControlMesh);
+    function getSurfacePoint( u: number, v: number, target: Vector3 ) {
+
+        return defNurbsSurface.getPoint( u, v, target );
+
+    }
+    
+    const geometry = new ParametricGeometry( getSurfacePoint, samples, samples );
+    const object = new THREE.Mesh( geometry, gridMaterial );
+    object.position.set(5, 0, 0);
+    scene.add(object);
+
+    const nurbsGridMesh = createPointMesh(nurbsMesh, 0.05);
+    scene.add(nurbsGridMesh);
+
+    const nurbsControlMesh = nurbsSurface.createControlPointGrid(0.2);
+    scene.add(nurbsControlMesh);
 
     return () => {};
 }

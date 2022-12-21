@@ -120,4 +120,52 @@ class BSplineSurface {
     }
 }
 
-export { BezierSurface, BSplineSurface };
+class NURBSSurface {
+    control_points: Vector4[][];
+    m: number;
+    n: number;
+    u_basis: ((u: number) => number)[];
+    v_basis: ((v: number) => number)[];
+
+    constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[]) {
+        this.control_points = control_points;
+        this.m = control_points.length;
+        this.n = control_points[0].length;
+        this.u_basis = [...Array(this.m).keys()].map(i => bSplineBasis(i, p, U));
+        this.v_basis = [...Array(this.n).keys()].map(j => bSplineBasis(j, q, V));
+    }
+
+    calculateSurfacePoint = (u: number, v: number): Vector3 => {
+        let point = new Vector3(0, 0, 0);
+        let denom = 1e-8;//0; //?
+
+        for(let i = 0; i < this.m; i++) {
+            for(let j = 0; j < this.n; j++) {
+                const control = this.control_points[i][j];
+                const uv_scale = this.u_basis[i](u) * this.v_basis[j](v) * control.w;
+                point = point.add(new Vector3(control.x, control.y, control.z).multiplyScalar(uv_scale));
+                denom += uv_scale;
+            }
+        }
+
+        return point.divideScalar(denom);
+    }
+
+    _calculateSurfacePoint = (u: number, v: number, target: Vector3): void => {
+        let point = this.calculateSurfacePoint(u, v);
+        target.set(point.x, point.y, point.z);
+    }
+
+    createGeometry = (samples: number): ParametricGeometry => {
+        return new ParametricGeometry(this._calculateSurfacePoint, samples, samples);
+    }
+
+    createControlPointGrid = (pointSize: number): Points => {
+        const flatPoints = this.control_points.flat().map(vec => new Vector3(vec.x, vec.y, vec.z));
+        const pointsGeom = new BufferGeometry().setFromPoints(flatPoints);
+        const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xAA00AA, size: pointSize }))
+        return pointsMesh;
+    }
+}
+
+export { BezierSurface, BSplineSurface, NURBSSurface };
