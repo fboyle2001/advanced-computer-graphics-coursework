@@ -1,6 +1,6 @@
-import { BufferGeometry, Points, PointsMaterial, Vector3 } from "three";
+import { BufferGeometry, Matrix4, Points, PointsMaterial, Vector3, Vector4 } from "three";
 import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry";
-import { binomial } from "./binomail_coeff";
+import { binomial } from "./binomial_coeff";
 
 const bernsteinBasisPolynomial = (n: number, i: number): ((t: number) => number) => {
     return (t: number) => binomial(n, i) * (t ** i) * ((1 - t) ** (n - i));
@@ -61,4 +61,11 @@ class BezierSurface {
     }
 }
 
-export { BezierSurface };
+const createNURBSGeometry = (weighted_control_points: Vector4[][]) => {
+    const bSplineMat = new Matrix4();
+    bSplineMat.set(-1, 3, -3, 1, 3, -6, 0, 4, -3, 3, 3, 1, 1, 0, 0, 0);
+    bSplineMat.multiplyScalar(1 / 6);
+
+}
+
+export { BezierSurface, createNURBSGeometry };
