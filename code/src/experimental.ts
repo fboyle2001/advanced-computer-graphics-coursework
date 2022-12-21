@@ -145,14 +145,14 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         ],
         [
             new THREE.Vector4( 1, 0, 0, 1 ),
-            new THREE.Vector4( 1, -1, 1, -1 ),
-            new THREE.Vector4( 1, -1, 2, -1 ),
+            new THREE.Vector4( 1, 2, 1, 1 ),
+            new THREE.Vector4( 1, 2, 2, 1 ),
             new THREE.Vector4( 1, 0, 3, 1 )
         ],
         [
             new THREE.Vector4( 2, 0, 0, 1 ),
-            new THREE.Vector4( 2, -1, 1, 1 ),
-            new THREE.Vector4( 2, -1, 2, 1 ),
+            new THREE.Vector4( 2, -2, 1, 1 ),
+            new THREE.Vector4( 2, -2, 2, 1 ),
             new THREE.Vector4( 2, 0, 3, 1 )
         ],
         [
@@ -167,7 +167,7 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     const V = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
     const p = 3;
     const q = 3;
-    const samples = 40;
+    const samples = 24;
 
     const nurbsSurface = new EditableNURBSSurface(nsControlPoints, p, q, U, V, samples);
     // const nurbsMesh = new Mesh(nurbsSurface.createGeometry(samples), gridMaterial);
@@ -197,11 +197,28 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     let last = 0;
     const updatesPerSecond = 5;
     const maxUpdates = 40;
+    const secondsPerWave = 2;
+
+    let currentHeight = 2;
+    let dir = -1;
+    let waveHeight = 4;
 
     return () => {
         if(last >= maxUpdates) {
             return;
         }
+
+        if(currentHeight < 0 || currentHeight > waveHeight) {
+            dir *= -1;
+        }
+
+        currentHeight += dir * (waveHeight / secondsPerWave) * clock.getDelta();
+        // console.log({height: currentHeight});
+        nurbsSurface.updateControlPoint(1, 1, new Vector4(1, currentHeight, 1, 1))
+        nurbsSurface.updateControlPoint(2, 1, new Vector4(1, currentHeight, 2, 1))
+        nurbsSurface.updateControlPoint(1, 2, new Vector4(2, -currentHeight * 2 / waveHeight, 1, 1))
+        nurbsSurface.updateControlPoint(2, 2, new Vector4(2, -currentHeight * 2 / waveHeight, 2, 1))
+        nurbsSurface.updateDynamicMeshes();
 
         // if(Math.round(clock.getElapsedTime() * updatesPerSecond) > last) {
         //     last += 1;

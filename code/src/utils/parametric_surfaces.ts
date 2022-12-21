@@ -128,6 +128,13 @@ class NURBSSurface {
     v_basis: ((v: number) => number)[];
 
     constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[]) {
+        /*
+         * To speed this up when responding to updates, we can precompute the denominators which are indexed by the (u, v) coordinates
+         * We can also precompute the numerator (and sum them at calculation time), they are indexed by (control_point, u, v)
+         * The denominators need updating if we change the weight of a control point
+         * The numerators need updating when we change a control point by computing, only those indexed by (control_point, _, _) need updating
+         * This reduces the number of updates need from control_point*samples**2 to samples**2
+         */
         this.control_points = control_points;
         this.m = control_points.length;
         this.n = control_points[0].length;
