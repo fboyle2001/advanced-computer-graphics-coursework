@@ -138,28 +138,34 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
 
     const nsControlPoints = [
         [
-            new THREE.Vector4( - 2, - 2, 1, 1 ),
-            new THREE.Vector4( - 2, - 1, - 2, 1 ),
-            new THREE.Vector4( - 2, 1, 2.5, 1 ),
-            new THREE.Vector4( - 2, 2, - 1, 1 )
+            new THREE.Vector4( 0, 0, 0, 1 ),
+            new THREE.Vector4( 0, 0, 1, 1 ),
+            new THREE.Vector4( 0, 0, 2, 1 ),
+            new THREE.Vector4( 0, 0, 3, 1 )
         ],
         [
-            new THREE.Vector4( 0, - 2, 0, 1 ),
-            new THREE.Vector4( 0, - 1, - 1, 5 ),
-            new THREE.Vector4( 0, 1, 1.5, 5 ),
-            new THREE.Vector4( 0, 2, 0, 1 )
+            new THREE.Vector4( 1, 0, 0, 1 ),
+            new THREE.Vector4( 1, -1, 1, -1 ),
+            new THREE.Vector4( 1, -1, 2, -1 ),
+            new THREE.Vector4( 1, 0, 3, 1 )
         ],
         [
-            new THREE.Vector4( 2, - 2, - 1, 1 ),
-            new THREE.Vector4( 2, - 1, 2, 1 ),
-            new THREE.Vector4( 2, 1, - 2.5, 1 ),
-            new THREE.Vector4( 2, 2, 1, 1 )
+            new THREE.Vector4( 2, 0, 0, 1 ),
+            new THREE.Vector4( 2, -1, 1, 1 ),
+            new THREE.Vector4( 2, -1, 2, 1 ),
+            new THREE.Vector4( 2, 0, 3, 1 )
+        ],
+        [
+            new THREE.Vector4( 3, 0, 0, 1 ),
+            new THREE.Vector4( 3, 0, 1, 1 ),
+            new THREE.Vector4( 3, 0, 2, 1 ),
+            new THREE.Vector4( 3, 0, 3, 1 )
         ]
     ];
     
-    const U = [ 0, 0, 0, 1, 1, 1 ];
+    const U = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
     const V = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
-    const p = 2;
+    const p = 3;
     const q = 3;
     const samples = 40;
 
@@ -167,18 +173,18 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     const nurbsMesh = new Mesh(nurbsSurface.createGeometry(samples), gridMaterial);
     scene.add(nurbsMesh);
 
-    const defNurbsSurface = new DefaultNURBS(p, q, U, V, nsControlPoints);
+    // const defNurbsSurface = new DefaultNURBS(p, q, U, V, nsControlPoints);
 
-    function getSurfacePoint( u: number, v: number, target: Vector3 ) {
+    // function getSurfacePoint( u: number, v: number, target: Vector3 ) {
 
-        return defNurbsSurface.getPoint( u, v, target );
+    //     return defNurbsSurface.getPoint( u, v, target );
 
-    }
+    // }
     
-    const geometry = new ParametricGeometry( getSurfacePoint, samples, samples );
-    const object = new THREE.Mesh( geometry, gridMaterial );
-    object.position.set(5, 0, 0);
-    scene.add(object);
+    // const geometry = new ParametricGeometry( getSurfacePoint, samples, samples );
+    // const object = new THREE.Mesh( geometry, gridMaterial );
+    // object.position.set(5, 0, 0);
+    // scene.add(object);
 
     const nurbsGridMesh = createPointMesh(nurbsMesh, 0.05);
     scene.add(nurbsGridMesh);
