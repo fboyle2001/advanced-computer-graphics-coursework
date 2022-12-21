@@ -10,8 +10,6 @@ More complex than Bezier:
 """
 
 def bspline_basis(i, p, U):
-    eps = 1e-8
-
     def basis(i, p, u):
         if p == 0:
             if U[i] <= u < U[i + 1]:

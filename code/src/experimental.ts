@@ -14,7 +14,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { SkeletalModel } from './utils/skeletal_model';
 
 import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
-import { BezierSurface } from './utils/bezier_surface';
+import { BezierSurface, BSplineSurface } from './utils/parametric_surfaces';
 import { createPointMesh } from './utils/points_util';
 
 /* CONFIGURATION */
@@ -137,46 +137,32 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         side: THREE.DoubleSide
     });
 
-    const flatControlPoints = [
-        [new Vector3(0, 0, 0), new Vector3(0, 0, 2), new Vector3(0, 0, 4)],
-        [new Vector3(1, 0, 0), new Vector3(1, 0, 2), new Vector3(1, 0, 4)],
-        [new Vector3(2, 0, 0), new Vector3(2, 0, 2), new Vector3(2, 0, 4)],
-        [new Vector3(3, 0, 0), new Vector3(3, 0, 2), new Vector3(3, 0, 4)],
-        [new Vector3(4, 0, 0), new Vector3(4, 0, 2), new Vector3(4, 0, 4)]
-    ]
+    const control_points = [
+        [new Vector3(2.0, 8.0, 1.0), new Vector3(2.5, 7.8, 2.0), new Vector3(3.0, 7.6, 3.0), new Vector3(4.0, 7.4, 4.0), new Vector3(5.2, 7.1, 5.0), new Vector3(4.8, 6.9, 6.0)],
+        [new Vector3(1.7, 7.0, 0.0), new Vector3(2.3, 6.9, 0.0), new Vector3(2.8, 6.8, 0.0), new Vector3(3.7, 6.5, 0.0), new Vector3(4.9, 6.2, 0.0), new Vector3(4.5, 5.9, 0.0)],
+        [new Vector3(1.3, 5.7, 0.0), new Vector3(2.1, 5.7, 0.0), new Vector3(2.6, 5.7, 0.0), new Vector3(3.8, 5.6, 0.0), new Vector3(4.6, 5.3, 0.0), new Vector3(4.8, 5.4, 0.0)],
+        [new Vector3(1.2, 5.0, 0.0), new Vector3(1.8, 4.9, 0.0), new Vector3(2.5, 4.9, 0.0), new Vector3(3.7, 4.8, 0.0), new Vector3(4.5, 4.6, 0.0), new Vector3(4.7, 4.4, 0.0)],
+        [new Vector3(0.8, 3.8, 0.0), new Vector3(1.4, 3.9, 0.0), new Vector3(2.2, 3.8, 0.0), new Vector3(3.4, 3.3, 0.0), new Vector3(4.3, 2.5, 0.0), new Vector3(4.8, 2.1, 0.0)],
+        [new Vector3(0.5, 3.0, 0.0), new Vector3(1.2, 3.3, 0.0), new Vector3(1.8, 3.4, 0.0), new Vector3(3.0, 3.0, 0.0), new Vector3(4.0, 1.5, 0.0), new Vector3(4.8, 0.0, 0.0)],
+    ];
 
-    const controlPoints = [
-        [new Vector3(0, 0, 0), new Vector3(0, 0, 2), new Vector3(0, 0, 4)],
-        [new Vector3(1, 0, 0), new Vector3(1, -1, 2), new Vector3(1, -0, 4)],
-        [new Vector3(2, -1, 0), new Vector3(2, -2, 2), new Vector3(2, -1, 4)],
-        [new Vector3(3, 0, 0), new Vector3(3, -1, 2), new Vector3(3, 0, 4)],
-        [new Vector3(4, 0, 0), new Vector3(4, 0, 2), new Vector3(4, 0, 4)]
-    ]
+    const U = [0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1];
+    const V = [0, 0, 0, 0, 0.33, 0.66, 1, 1, 1, 1];
+    const p = 2;
+    const q = 3;
+    const samples = 4;
 
-    const bezierSurface = new BezierSurface(controlPoints);
-    const bezierMesh = new Mesh(bezierSurface.createGeometry(4), gridMaterial);
-    scene.add(bezierMesh);
+    const bSplineSurface = new BSplineSurface(control_points, p, q, U, V);
+    const bSplineMesh = new Mesh(bSplineSurface.createGeometry(samples), gridMaterial);
+    scene.add(bSplineMesh);
 
-    const bezierGridMesh = createPointMesh(bezierMesh, 0.01);
-    scene.add(bezierGridMesh);
+    const bSplineGridMesh = createPointMesh(bSplineMesh, 0.2);
+    scene.add(bSplineGridMesh);
 
-    const bezierControlMesh = bezierSurface.createControlPointGrid(0.05);
-    scene.add(bezierControlMesh);
+    const bSplineControlMesh = bSplineSurface.createControlPointGrid(0.2);
+    scene.add(bSplineControlMesh);
 
-    let track = 0;
-    let dir = 1;
-
-    return () => {
-        track += dir * 0.01;
-
-        if(track > 3 || track < -1) {
-            dir *= -1;
-        }
-
-        bezierMesh.geometry.attributes.position.setXYZ(12, 2, -(2 + track), 2);
-        bezierMesh.geometry.attributes.position.needsUpdate = true;
-        //bezierMesh.geometry.attributes.index.needsUpdate = true;
-    }
+    return () => {};
 }
 
 const animate = (x: () => void) => {
