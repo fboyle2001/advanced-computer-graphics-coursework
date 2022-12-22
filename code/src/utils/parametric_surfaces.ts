@@ -144,7 +144,7 @@ class NURBSSurface {
 
     calculateSurfacePoint = (u: number, v: number): Vector3 => {
         let point = new Vector3(0, 0, 0);
-        let denom = 1e-8;//0; //?
+        let denom = 1e-8;
 
         for(let i = 0; i < this.m; i++) {
             for(let j = 0; j < this.n; j++) {

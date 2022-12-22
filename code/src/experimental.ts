@@ -15,6 +15,7 @@ import { SkeletalModel } from './utils/skeletal_model';
 import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
 import { BezierSurface, BSplineSurface, NURBSSurface, EditableNURBSSurface } from './utils/parametric_surfaces';
 import { createPointMesh } from './utils/points_util';
+import { createBikeShed } from './utils/model_store';
 
 /* CONFIGURATION */
 // Config this to simulate network arrival
@@ -135,100 +136,11 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         map: gridMap,
         side: THREE.DoubleSide
     });
-
-    const nsControlPoints = [
-        [
-            new THREE.Vector4( 0, 0, 0, 1 ),
-            new THREE.Vector4( 0, 0, 1, 1 ),
-            new THREE.Vector4( 0, 0, 2, 1 ),
-            new THREE.Vector4( 0, 0, 3, 1 )
-        ],
-        [
-            new THREE.Vector4( 1, 0, 0, 1 ),
-            new THREE.Vector4( 1, 2, 1, 1 ),
-            new THREE.Vector4( 1, 2, 2, 1 ),
-            new THREE.Vector4( 1, 0, 3, 1 )
-        ],
-        [
-            new THREE.Vector4( 2, 0, 0, 1 ),
-            new THREE.Vector4( 2, -2, 1, 1 ),
-            new THREE.Vector4( 2, -2, 2, 1 ),
-            new THREE.Vector4( 2, 0, 3, 1 )
-        ],
-        [
-            new THREE.Vector4( 3, 0, 0, 1 ),
-            new THREE.Vector4( 3, 0, 1, 1 ),
-            new THREE.Vector4( 3, 0, 2, 1 ),
-            new THREE.Vector4( 3, 0, 3, 1 )
-        ]
-    ];
     
-    const U = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
-    const V = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
-    const p = 3;
-    const q = 3;
-    const samples = 24;
+    const bikeShed = createBikeShed(12, blueMaterial, brownMaterial, purpleMaterial);
+    scene.add(bikeShed);
 
-    const nurbsSurface = new EditableNURBSSurface(nsControlPoints, p, q, U, V, samples);
-    // const nurbsMesh = new Mesh(nurbsSurface.createGeometry(samples), gridMaterial);
-    // scene.add(nurbsMesh);
-    const editableNurbsSurface = nurbsSurface.createDynamicMesh(gridMaterial);
-    scene.add(editableNurbsSurface);
-
-    // const defNurbsSurface = new DefaultNURBS(p, q, U, V, nsControlPoints);
-
-    // function getSurfacePoint( u: number, v: number, target: Vector3 ) {
-
-    //     return defNurbsSurface.getPoint( u, v, target );
-
-    // }
-    
-    // const geometry = new ParametricGeometry( getSurfacePoint, samples, samples );
-    // const object = new THREE.Mesh( geometry, gridMaterial );
-    // object.position.set(5, 0, 0);
-    // scene.add(object);
-
-    // const nurbsGridMesh = createPointMesh(nurbsMesh, 0.05);
-    // scene.add(nurbsGridMesh);
-
-    // const nurbsControlMesh = nurbsSurface.createControlPointGrid(0.2);
-    // scene.add(nurbsControlMesh);
-    const clock = new Clock();
-    let last = 0;
-    const updatesPerSecond = 5;
-    const maxUpdates = 40;
-    const secondsPerWave = 2;
-
-    let currentHeight = 2;
-    let dir = -1;
-    let waveHeight = 4;
-
-    return () => {
-        if(last >= maxUpdates) {
-            return;
-        }
-
-        if(currentHeight < 0 || currentHeight > waveHeight) {
-            dir *= -1;
-        }
-
-        currentHeight += dir * (waveHeight / secondsPerWave) * clock.getDelta();
-        // console.log({height: currentHeight});
-        nurbsSurface.updateControlPoint(1, 1, new Vector4(1, currentHeight, 1, 1))
-        nurbsSurface.updateControlPoint(2, 1, new Vector4(1, currentHeight, 2, 1))
-        nurbsSurface.updateControlPoint(1, 2, new Vector4(2, -currentHeight * 2 / waveHeight, 1, 1))
-        nurbsSurface.updateControlPoint(2, 2, new Vector4(2, -currentHeight * 2 / waveHeight, 2, 1))
-        nurbsSurface.updateDynamicMeshes();
-
-        // if(Math.round(clock.getElapsedTime() * updatesPerSecond) > last) {
-        //     last += 1;
-        //     nurbsSurface.updateControlPoint(1, 1, new Vector4(1, -1, 1, -1 + clock.getElapsedTime() / 10))
-        //     nurbsSurface.updateDynamicMeshes();
-        // }
-
-        // nurbsSurface.updateControlPoint(1, 1, new Vector4(1, -1, 1, -1 + clock.getElapsedTime() / 10))
-        // nurbsSurface.updateDynamicMeshes();
-    };
+    return () => {};
 }
 
 const animate = (x: () => void) => {
