@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import Stats from 'three/examples/jsm/libs/stats.module';
 import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -30,7 +30,7 @@ controls.enableDamping = true;
 
 const skyboxLoader = new THREE.TextureLoader();
 const texture = skyboxLoader.load(
-    "FS002_Rainy.png", () => {
+    "/textures/skybox.png", () => {
         const rt = new THREE.WebGLCubeRenderTarget(texture.image.height);
         rt.fromEquirectangularTexture(renderer, texture);
         scene.background = rt.texture;

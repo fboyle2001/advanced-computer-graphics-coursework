@@ -6,7 +6,7 @@ import { ModelLoader } from './utils/model_loader';
 import { createLevelOfDetail } from './utils/level_of_detail';
 import { ParametricBufferGeometry, ParametricGeometry } from 'three/examples/jsm/geometries/ParametricGeometry';
 import { ParametricGeometries } from 'three/examples/jsm/geometries/ParametricGeometries';
-import { BufferGeometry, Clock, Mesh, Points, PointsMaterial, SkinnedMesh, Vector, Vector3, Vector4 } from 'three';
+import { BufferGeometry, Clock, Group, Mesh, Points, PointsMaterial, SkinnedMesh, TextureLoader, Vector, Vector3, Vector4 } from 'three';
 
 import { NURBSSurface as DefaultNURBS } from 'three/examples/jsm/curves/NURBSSurface.js';
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -15,7 +15,7 @@ import { SkeletalModel } from './utils/skeletal_model';
 import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
 import { BezierSurface, BSplineSurface, NURBSSurface, EditableNURBSSurface } from './utils/parametric_surfaces';
 import { createPointMesh } from './utils/points_util';
-import { createBikeShed } from './utils/model_store';
+import { createBikeShed, createBillboardTree } from './utils/model_store';
 
 /* CONFIGURATION */
 // Config this to simulate network arrival
@@ -137,8 +137,13 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         side: THREE.DoubleSide
     });
     
-    const bikeShed = createBikeShed(12, blueMaterial, brownMaterial, purpleMaterial);
-    scene.add(bikeShed);
+    // const bikeShed = createBikeShed(12, blueMaterial, brownMaterial, purpleMaterial);
+    // scene.add(bikeShed);
+
+    const bend = 0;
+
+    const tree = createBillboardTree(4);
+    scene.add(tree)
 
     return () => {};
 }

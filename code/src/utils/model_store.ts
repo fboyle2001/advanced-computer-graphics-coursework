@@ -1,4 +1,4 @@
-import { BufferGeometry, Group, Material, Mesh, Triangle, Vector3 } from "three";
+import { BufferGeometry, DoubleSide, Group, Material, Mesh, MeshBasicMaterial, TextureLoader, Triangle, Vector3 } from "three";
 import { BezierSurface } from "./parametric_surfaces";
 
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): Group => {
@@ -50,4 +50,36 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     return group;
 }
 
-export { createBikeShed };
+const createBillboardTree = (faces: number): Group => {
+    const billboardTreeSurfaceGeomGen = new BezierSurface(
+        [
+            [new Vector3(0, 0, 0), new Vector3(0, 9, 0), new Vector3(0, 9, 0)],
+            [new Vector3(0, 0, 8), new Vector3(0, 9, 8), new Vector3(0, 9, 8)]
+        ]
+    );
+
+    const billboardTexture = new TextureLoader().load("/textures/tree_billboard.png");
+    const billboardMaterial = new MeshBasicMaterial({
+        map: billboardTexture,
+        transparent: true,
+        depthTest: false,
+        side: DoubleSide,
+        
+    });
+    
+    const billboardMesh = new Mesh(billboardTreeSurfaceGeomGen.createGeometry(2), billboardMaterial);
+    const group = new Group().add(billboardMesh);
+
+    for(let i = 1; i < faces; i++) {
+        const otherFace = billboardMesh.clone();
+        otherFace.position.sub(new Vector3(0, 0, 4));
+        otherFace.position.applyAxisAngle(new Vector3(0, 1, 0), i * Math.PI / faces)
+        otherFace.position.add(new Vector3(0, 0, 4));
+        otherFace.rotateOnAxis(new Vector3(0, 1, 0), i * Math.PI / faces)
+        group.add(otherFace);
+    }
+
+    return group
+}
+
+export { createBikeShed, createBillboardTree };
