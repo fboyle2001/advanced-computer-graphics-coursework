@@ -1,11 +1,27 @@
-import { BufferGeometry, DoubleSide, Group, Material, Mesh, MeshBasicMaterial, TextureLoader, Triangle, Vector3 } from "three";
-import { BezierSurface } from "./parametric_surfaces";
+import THREE, { BufferGeometry, DoubleSide, Group, Material, Mesh, MeshBasicMaterial, TextureLoader, Triangle, Vector3 } from "three";
+import { ModelLoader } from "./model_loader";
+import { BezierGeometryMaker } from "./parametric_surfaces";
+import { ProgressiveMeshModel } from "./progressive_mesh";
+import { scene } from "./three_setup";
+
+import chairModelData from '../progressive_meshes/chair_50.json';
+import { createLevelOfDetail } from "./level_of_detail";
+
+const levelOfDetailDistances = {
+    low: 20,
+    medium: 10,
+    high: 0
+}
+
+const eps = (): number => {
+    return Math.random() / 1e6;
+}
 
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): Group => {
     const group = new Group();
 
     const curvedRoof = new Mesh(
-        new BezierSurface([
+        new BezierGeometryMaker([
             [new Vector3(0, 0, 0), new Vector3(0, 4, 0), new Vector3(4, 4, 0)],
             [new Vector3(0, 0, 8), new Vector3(0, 4, 8), new Vector3(4, 4, 8)]
         ]).createGeometry(samples), 
@@ -16,7 +32,7 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     const side = new Group();
 
     const curvedSection = new Mesh(
-        new BezierSurface([
+        new BezierGeometryMaker([
             [new Vector3(0, 0, 0), new Vector3(0, 4, 0), new Vector3(4, 4, 0)],
             [new Vector3(4, 4, 0), new Vector3(0, 4, 0), new Vector3(0, 0, 0)]
         ]).createGeometry(samples),
@@ -51,7 +67,7 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
 }
 
 const createBillboardTree = (faces: number): Group => {
-    const billboardTreeSurfaceGeomGen = new BezierSurface(
+    const billboardTreeSurfaceGeomGen = new BezierGeometryMaker(
         [
             [new Vector3(0, 0, 0), new Vector3(0, 9, 0), new Vector3(0, 9, 0)],
             [new Vector3(0, 0, 8), new Vector3(0, 9, 8), new Vector3(0, 9, 8)]

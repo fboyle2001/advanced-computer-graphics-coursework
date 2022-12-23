@@ -15,7 +15,7 @@ const defaultPostLoad = (model: THREE.Group): void => {
 }
 
 class ModelLoader {
-    scene: THREE.Scene;
+    scene: THREE.Scene | null;
     loaded: boolean;
     object: THREE.Group | undefined;
     file_location: string;
@@ -23,7 +23,7 @@ class ModelLoader {
     type: string;
     postLoad: (model: THREE.Group) => void;
 
-    constructor(scene: THREE.Scene, file_location: string, postLoad?: (model: THREE.Group) => void) {
+    constructor(scene: THREE.Scene | null, file_location: string, postLoad?: (model: THREE.Group) => void) {
         this.scene = scene;
         this.postLoad = postLoad ?? defaultPostLoad;
         this.loaded = false;
@@ -55,7 +55,7 @@ class ModelLoader {
                         }
 
                         const instance = this.object.clone();
-                        this.scene.add(instance);
+                        this.scene?.add(instance);
                         callback(instance);
                     });
                 }, undefined, console.error);
@@ -91,7 +91,7 @@ class ModelLoader {
             }
 
             const instance = this.object.clone();
-            this.scene.add(instance);
+            this.scene?.add(instance);
             callback(instance);
         });
 
@@ -106,7 +106,7 @@ class ModelLoader {
         }
 
         const instance = this.object.clone();
-        this.scene.add(instance);
+        this.scene?.add(instance);
         postAdd(instance);
     }
 

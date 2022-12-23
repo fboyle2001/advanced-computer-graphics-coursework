@@ -6,7 +6,7 @@ const bernsteinBasis = (n: number, i: number): ((t: number) => number) => {
     return (t: number) => binomial(n, i) * (t ** i) * ((1 - t) ** (n - i));
 }
 
-class BezierSurface {
+class BezierGeometryMaker {
     control_points: Vector3[][];
     m: number;
     m_basis: ((t: number) => number)[] = [];
@@ -75,7 +75,7 @@ const bSplineBasis = (i: number, p: number, U: number[]): ((u: number) => number
     return (u: number) => basis(i, p, u);
 }
 
-class BSplineSurface {
+class BSplineGeometryMaker {
     control_points: Vector3[][];
     m: number;
     n: number;
@@ -126,8 +126,10 @@ class NURBSSurface {
     n: number;
     u_basis: ((u: number) => number)[];
     v_basis: ((v: number) => number)[];
+    mesh: Mesh;
+    samples: number;
 
-    constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[]) {
+    constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[], samples: number, material: Material) {
         /*
          * To speed this up when responding to updates, we can precompute the denominators which are indexed by the (u, v) coordinates
          * We can also precompute the numerator (and sum them at calculation time), they are indexed by (control_point, u, v)
@@ -140,6 +142,8 @@ class NURBSSurface {
         this.n = control_points[0].length;
         this.u_basis = [...Array(this.m).keys()].map(i => bSplineBasis(i, p, U));
         this.v_basis = [...Array(this.n).keys()].map(j => bSplineBasis(j, q, V));
+        this.samples = samples;
+        this.mesh = new Mesh(this._createGeometry(this.samples), material); 
     }
 
     calculateSurfacePoint = (u: number, v: number): Vector3 => {
@@ -163,7 +167,7 @@ class NURBSSurface {
         target.set(point.x, point.y, point.z);
     }
 
-    createGeometry = (samples: number): ParametricGeometry => {
+    _createGeometry = (samples: number): ParametricGeometry => {
         return new ParametricGeometry(this._calculateSurfacePoint, samples, samples);
     }
 
@@ -173,48 +177,22 @@ class NURBSSurface {
         const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xAA00AA, size: pointSize }))
         return pointsMesh;
     }
-}
 
-class EditableNURBSSurface {
-    surface: NURBSSurface;
-    known_meshes: Mesh[];
-    samples: number;
-    created_geometries: BufferGeometry[];
-
-    constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[], samples: number) {
-        this.surface = new NURBSSurface(control_points, p, q, U, V);
+    updateSampleCount = (samples: number): void => {
         this.samples = samples;
-        this.known_meshes = [];
-        this.created_geometries = [];
+        // Need to make a fresh geometry when we update the sample resolution
+        // Automatically updates the generated mesh
+        this.mesh.geometry = this._createGeometry(this.samples);
     }
 
-    createDynamicMesh(material: Material) {
-        const newGeometry = this.surface.createGeometry(this.samples);
-        this.created_geometries.push(newGeometry)
-        const mesh = new Mesh(newGeometry, material);
-        this.known_meshes.push(mesh);
-        return mesh;
-    }
-
-    updateControlPoint = (i: number, j: number, target: Vector4) => {
-        this.surface.control_points[i][j] = target;
-    }
-
-    updateSampleResolution = (samples: number) => {
-        this.samples = samples;
-    }
-
-    updateDynamicMeshes = () => {
-        const updatedGeometry = this.surface.createGeometry(this.samples);
-
-        this.known_meshes.forEach(mesh => {
-            mesh.geometry = updatedGeometry;
-            mesh.geometry.attributes.position.needsUpdate = true;
-        });
-
-        this.created_geometries.forEach(geom => geom.dispose());
-        this.created_geometries.push(updatedGeometry);
+    updateControlPoint = (row: number, column: number, updated_point: Vector4, incremental: boolean = false): void => {
+        // Update the mesh.geometry.position from this
+        if(!incremental) {
+            this.control_points[row][column] = updated_point;
+            this.mesh.geometry = this._createGeometry(this.samples);
+            return;
+        }
     }
 }
 
-export { BezierSurface, BSplineSurface, NURBSSurface, EditableNURBSSurface };
+export { BezierGeometryMaker, BSplineGeometryMaker, NURBSSurface };

@@ -58,8 +58,6 @@ const updateStatsDisplay = () => {
     }
 }
 
-const clock = new THREE.Clock();
-
 const animate = () => {
     requestAnimationFrame(animate)
     controls.update();
