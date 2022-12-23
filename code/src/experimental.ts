@@ -53,10 +53,13 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     const V = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
     const p = 3;
     const q = 3;
-    const samples = 40;
+    const samples = 24;
 
     const nurbsSurface = new NURBSSurface(nsControlPoints, p, q, U, V, samples, gridMaterial);
     scene.add(nurbsSurface.mesh)
+    scene.add(nurbsSurface.control_point_grid);
+
+    setTimeout(() => nurbsSurface.updateControlPoint(1, 1, new THREE.Vector3(1, -10, 1), true), 1000)
 
     return () => {};
 }
