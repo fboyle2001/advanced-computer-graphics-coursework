@@ -1,4 +1,4 @@
-import { BufferGeometry, Material, Matrix4, Mesh, Points, PointsMaterial, Scene, Vector3, Vector4 } from "three";
+import { BufferGeometry, Material, Mesh, Points, PointsMaterial, Vector3, Vector4 } from "three";
 import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry";
 import { binomial } from "./binomial_coeff";
 
@@ -133,18 +133,10 @@ class NURBSSurface {
     v_basis: ((v: number) => number)[];
     mesh: Mesh;
     samples: number;
-    stored_computation: NURBSIntermediateComputation[][] = [];
-    // @ts-ignore
-    control_point_grid: Points;
+    stored_computation!: NURBSIntermediateComputation[][];
+    control_point_grid!: Points;
 
     constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[], samples: number, material: Material) {
-        /*
-         * To speed this up when responding to updates, we can precompute the denominators which are indexed by the (u, v) coordinates
-         * We can also precompute the numerator (and sum them at calculation time), they are indexed by (control_point, u, v)
-         * The denominators need updating if we change the weight of a control point
-         * The numerators need updating when we change a control point by computing, only those indexed by (control_point, _, _) need updating
-         * This reduces the number of updates need from control_point*samples**2 to samples**2
-         */
         this.control_points = control_points;
         this.m = control_points.length;
         this.n = control_points[0].length;
@@ -161,6 +153,7 @@ class NURBSSurface {
         const pointsGeom = new BufferGeometry().setFromPoints(flatPoints);
 
         if(this.control_point_grid) {
+            this.control_point_grid.geometry.dispose();
             this.control_point_grid.geometry = pointsGeom;
         } else{
             const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xAA00AA, size: 0.2 }));
@@ -186,12 +179,7 @@ class NURBSSurface {
             for(let j = 0; j < this.n; j++) {
                 const control = this.control_points[i][j];
                 const uv_scale = this.u_basis[i](u) * this.v_basis[j](v) * control.w;
-
-                // if(u_idx == 0 && v_idx == 0) {
-                //     console.log({i, j, uv_scale})
-                // }
-
-                point = point.add(new Vector3(control.x, control.y, control.z).multiplyScalar(uv_scale));
+                point.add(new Vector3(control.x, control.y, control.z).multiplyScalar(uv_scale));
                 i_uv_scales.push(uv_scale);
                 denom += uv_scale;
             }
@@ -200,7 +188,6 @@ class NURBSSurface {
         }
 
         this.stored_computation[u_idx][v_idx] = { uv_scales, denom };
-
         return point.divideScalar(denom);
     }
 
@@ -218,45 +205,45 @@ class NURBSSurface {
         // Need to make a fresh geometry when we update the sample resolution
         // Automatically updates the generated mesh
         this._resetStored();
+        this.mesh.geometry.dispose();
         this.mesh.geometry = this._createGeometry(this.samples);
     }
 
-    updateControlPoint = (row: number, column: number, updated_point: Vector3, incremental: boolean = false): void => {
-        // Do not allow changes to the control point weights
+    updateControlPoint = (row: number, column: number, updated_point: Vector3, incremental: boolean = true): void => {
+        // Incremental update is O((samples + 1) ** 2) ~= O(s^2)
+        // Non-incremental update is O(m * n * (samples + 1) ** 2) ~= O(mns^2) > O(s^2)
+        // Incremental actually uses less space because we aren't maintaining two geometries but updating one
+
+        // Do not allow changes to the control point weights otherwise we need to recompute a new geometry every time
+        // Easy to implement this in the future if I want it
         const existing_point = this.control_points[row][column].clone();
         const weighted_point = new Vector4(updated_point.x, updated_point.y, updated_point.z, existing_point.w);
-        // Update the mesh.geometry.position from this
+
+        // If not doing an incremental update, replace the geometry instead
         if(!incremental) {
             this.control_points[row][column] = weighted_point;
             this._generateControlPointGrid();
+            this.mesh.geometry.dispose();
             this.mesh.geometry = this._createGeometry(this.samples);
             return;
         }
 
-        const pointDifference = updated_point.clone().sub(new Vector3(existing_point.x, existing_point.y, existing_point.z));
-        const xDiff = existing_point.x - updated_point.x;
-        const yDiff = existing_point.y - updated_point.y;
-        const zDiff = existing_point.z - updated_point.z;
-        console.log({ pointDifference, updated_point, existing_point, xDiff, yDiff, zDiff })
-        console.log({cp: this.control_points})
+        // More efficient than cloning the vector each time
+        const xDiff = updated_point.x - existing_point.x;
+        const yDiff = updated_point.y - existing_point.y;
+        const zDiff = updated_point.z - existing_point.z;
 
         for(let v_idx = 0; v_idx <= this.samples; v_idx++) {
-            const v = v_idx / this.samples;
-
             for(let u_idx = 0; u_idx <= this.samples; u_idx++) {
-                const u = u_idx / this.samples;
-                // TODO: Update the stored computation
-
                 const posIdx = v_idx * (this.samples + 1) + u_idx
                 const { uv_scales, denom } = this.stored_computation[u_idx][v_idx];
-                const uv_scale_change = pointDifference.clone().multiplyScalar(uv_scales[row][column]);
-                console.log({ uv_scale: uv_scales[row][column], uv_scale_change });
+                const uv_scale = uv_scales[row][column];
                 
                 this.mesh.geometry.attributes.position.setXYZ(
                     posIdx,
-                    this.mesh.geometry.attributes.position.getX(posIdx) + uv_scale_change.x / denom,
-                    this.mesh.geometry.attributes.position.getY(posIdx) + uv_scale_change.y / denom,
-                    this.mesh.geometry.attributes.position.getZ(posIdx) + uv_scale_change.z / denom
+                    this.mesh.geometry.attributes.position.getX(posIdx) + xDiff * uv_scale / denom,
+                    this.mesh.geometry.attributes.position.getY(posIdx) + yDiff * uv_scale / denom,
+                    this.mesh.geometry.attributes.position.getZ(posIdx) + zDiff * uv_scale / denom 
                 )
             }
         }
