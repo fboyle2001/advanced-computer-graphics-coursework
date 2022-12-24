@@ -6,6 +6,7 @@ import { scene } from "./three_setup";
 
 import chairModelData from '../progressive_meshes/chair_50.json';
 import { createLevelOfDetail } from "./level_of_detail";
+import { RegisterableComponents } from "./registerable";
 
 const levelOfDetailDistances = {
     low: 20,
@@ -17,7 +18,7 @@ const eps = (): number => {
     return Math.random() / 1e6;
 }
 
-const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): Group => {
+const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): [Group, RegisterableComponents] => {
     const group = new Group();
 
     const curvedRoof = new BezierSurface(
@@ -50,7 +51,23 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     side.add(triangleFill);
     group.add(side);
     
-    const otherSide = side.clone();
+    const otherSide = new Group(); 
+    const otherCurvedSection = new BezierSurface(
+        [
+            [new Vector3(0, 0, 0), new Vector3(0, 4, 0), new Vector3(4, 4, 0)],
+            [new Vector3(4, 4, 0), new Vector3(0, 4, 0), new Vector3(0, 0, 0)]
+        ],
+        samples,
+        sideMaterial
+    );
+
+    const otherTriangleFill = new Mesh(
+        new BufferGeometry().setFromPoints([new Vector3(0, 0, 0), new Vector3(4, 4, 0), new Vector3(4, 0, 0)]), 
+        sideMaterial
+    );
+    
+    otherSide.add(otherCurvedSection.mesh);
+    otherSide.add(otherTriangleFill);
     otherSide.position.set(0, 0, 8);
     group.add(otherSide);
 
@@ -65,7 +82,9 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     )
     group.add(floor);
 
-    return group;
+    return [group, {
+        surfaces: [curvedRoof, curvedSection, otherCurvedSection]
+    }];
 }
 
 const createBillboardTree = (faces: number): Group => {

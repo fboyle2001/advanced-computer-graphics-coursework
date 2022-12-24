@@ -1,7 +1,7 @@
-import { BufferGeometry, Material, Mesh, Points, PointsMaterial, Vector3, Vector4 } from "three";
+import { BufferGeometry, Camera, Material, Mesh, Object3D, PerspectiveCamera, Points, PointsMaterial, Vector3, Vector4 } from "three";
 import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry";
 import { binomial } from "./binomial_coeff";
-import { Registerable } from "./registerable";
+import { Registerable, RegisterableComponents } from "./registerable";
 
 const bernsteinBasis = (n: number, i: number): ((t: number) => number) => {
     return (t: number) => binomial(n, i) * (t ** i) * ((1 - t) ** (n - i));
@@ -301,4 +301,35 @@ class NURBSSurface extends ParametricSurface {
     }
 }
 
-export { ParametricSurface, BezierSurface, BSplineSurface, NURBSSurface };
+class LODParametricWrapper extends Registerable {
+    surface: ParametricSurface;
+    currentLevel: number;
+    levels: {[distance: string]: number};
+
+    constructor(surface: ParametricSurface) {
+        super();
+        this.surface = surface;
+        this.currentLevel = 0;
+        this.levels = {};
+    }
+
+    getDistanceToCamera(camera: PerspectiveCamera) {
+        return new Vector3().setFromMatrixPosition(camera.matrixWorld).distanceTo(new Vector3().setFromMatrixPosition(this.surface.mesh.matrixWorld)) / camera.zoom;
+    }
+
+    update(camera: PerspectiveCamera) {
+        const distance = this.getDistanceToCamera(camera);
+
+        if(distance < 20) {
+            this.surface.updateSampleCount(40);
+        } else {
+            this.surface.updateSampleCount(10);
+        }
+    }
+
+    getComponents(): RegisterableComponents {
+        return {};
+    }
+}
+
+export { ParametricSurface, BezierSurface, BSplineSurface, NURBSSurface, LODParametricWrapper };

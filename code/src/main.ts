@@ -6,8 +6,10 @@ import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
 import { createBikeShed } from './utils/model_store';
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
-import { BezierSurface, NURBSSurface } from './utils/parametric_surfaces';
+import { BezierSurface, LODParametricWrapper, NURBSSurface } from './utils/parametric_surfaces';
+import { Plane, PlaneGeometry, Vector3 } from 'three';
 
+const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
 /* BASIC MATERIALS */
 const purpleMaterial = new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THREE.DoubleSide });
@@ -30,6 +32,10 @@ window.addEventListener('resize', () => {
 
 let registeredComponents = new ComponentRegister();
 
+let visualSettings = {
+    surfaceSamples: 20
+}
+
 const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> => {
     const gridMap = new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg");
     gridMap.wrapS = gridMap.wrapT = THREE.RepeatWrapping;
@@ -40,7 +46,37 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
         side: THREE.DoubleSide
     });
 
-    return () => {};
+    const carParkPlane = new THREE.Mesh(new PlaneGeometry(20, 20), blueMaterial);
+    carParkPlane.rotation.x = -Math.PI / 2;
+    carParkPlane.position.add(new Vector3(10, 0, 10));
+    scene.add(carParkPlane);
+
+    const bikeShedCount = 3;
+
+    for(let i = 0; i < bikeShedCount; i++) {
+        const [bikeShed, registerable] = createBikeShed(visualSettings.surfaceSamples, gridMaterial, brownMaterial, purpleMaterial);
+        let size = new Vector3();
+        new THREE.Box3().setFromObject(bikeShed).getSize(size);
+        bikeShed.position.add(new Vector3(0, offset(), (size.z + 0.2) * i));
+        registeredComponents.addComponents(registerable);
+        // scene.add(bikeShed);
+    }
+
+    const curvedSection = new BezierSurface(
+        [
+            [new Vector3(0, 0, 0), new Vector3(0, 4, 0), new Vector3(4, 4, 0)],
+            [new Vector3(4, 4, 0), new Vector3(0, 4, 0), new Vector3(0, 0, 0)]
+        ],
+        30,
+        gridMaterial
+    );
+
+    const lod = new LODParametricWrapper(curvedSection);
+    scene.add(lod.surface.mesh);
+
+    return () => {
+        lod.update(camera);
+    };
 }
 
 const animate = (sceneUpdate: () => void) => {

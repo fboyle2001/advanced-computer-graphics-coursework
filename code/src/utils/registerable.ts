@@ -24,7 +24,10 @@ class ComponentRegister {
 
     register = (registerable: Registerable): void => {
         const components = registerable.getComponents();
-        
+        this.addComponents(components);
+    }
+
+    addComponents = (components: RegisterableComponents): void => {
         if(components.lods) {
             components.lods.forEach(lod => this.lods.push(lod));
         }
