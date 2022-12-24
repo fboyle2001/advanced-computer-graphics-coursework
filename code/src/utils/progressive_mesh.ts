@@ -17,7 +17,7 @@ interface ReductionRecord {
     polygons: string[][];
 }
 
-class ProgressiveMeshModel {
+class ProgressiveMesh {
     vertexLimit: number;
     polygonLimit: number;
     reductionData: ReductionRecord[];
@@ -34,9 +34,6 @@ class ProgressiveMeshModel {
         max_vertices: number,
         max_faces: number
     ) {
-        console.log({initial_vertices})
-        console.log({initial_faces})
-
         this.reusableVertexIndices = [];
         this.reusableFaceIndices = [];
 
@@ -226,4 +223,4 @@ class ProgressiveMeshModel {
     }
 }
 
-export { ProgressiveMeshModel };
+export { ProgressiveMesh };

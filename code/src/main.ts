@@ -1,31 +1,55 @@
 import * as THREE from 'three';
-import { scene, animate } from './utils/three_setup';
+import { renderer, scene, camera, controls, stats, updateStatsDisplay } from './utils/three_setup';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
+import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
+import { createBikeShed } from './utils/model_store';
+import { ComponentRegister, RegisterableComponents } from './utils/registerable';
+import { BezierSurface, NURBSSurface } from './utils/parametric_surfaces';
 
-/* CONFIGURATION */
-/** USER SETTINGS **/
-// Config this to simulate network arrival
-const networkUpdatesPerSecond = 1000;
-
-/** DERIVED CONFIGURATION **/
-const networkDelayMS = 1000 / networkUpdatesPerSecond;
 
 /* BASIC MATERIALS */
 const purpleMaterial = new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THREE.DoubleSide });
 const brownMaterial = new THREE.MeshBasicMaterial({ color: 0x9e9378, side: THREE.DoubleSide });
-const blueMaterial = new THREE.MeshBasicMaterial({ color: 0x268cab, side: THREE.DoubleSide }); 
+const blueMaterial = new THREE.MeshBasicMaterial({ color: 0x268cab, side: THREE.DoubleSide });
 
-const constructScene = async (scene: THREE.Scene) => {
-    // Setup the base plane
-    const geometry = new THREE.PlaneGeometry(100, 100);
-    const gravelTexture = new THREE.TextureLoader().load("/textures/gravel.jpg");
-    gravelTexture.wrapS = gravelTexture.wrapT = THREE.RepeatWrapping;
-    gravelTexture.repeat.set(16, 16);
+const composedRenderer = new EffectComposer(renderer);
+// const primaryRenderPass = new SSAARenderPass(scene, camera, 0xFFFFFF, 1);
+const primaryRenderPass = new RenderPass(scene, camera);
+composedRenderer.addPass(primaryRenderPass);
+//composedRenderer.addPass(new SMAAPass(window.innerWidth, window.innerHeight))
 
-    const gravelMaterial = new THREE.MeshPhongMaterial({ map: gravelTexture });
-    const plane = new THREE.Mesh(geometry, gravelMaterial);
-    plane.rotation.x = -Math.PI / 2;
-    scene.add(plane);
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    primaryRenderPass.camera = camera;
+    primaryRenderPass.scene = scene;
+}, false);
+
+let registeredComponents = new ComponentRegister();
+
+const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> => {
+    const gridMap = new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg");
+    gridMap.wrapS = gridMap.wrapT = THREE.RepeatWrapping;
+    gridMap.anisotropy = 16;
+
+    const gridMaterial = new THREE.MeshPhongMaterial({
+        map: gridMap,
+        side: THREE.DoubleSide
+    });
+
+    return () => {};
 }
 
-constructScene(scene);
-animate();
+const animate = (sceneUpdate: () => void) => {
+    requestAnimationFrame(() => animate(sceneUpdate))
+    controls.update();
+    composedRenderer.render();
+    stats.update();
+    updateStatsDisplay()
+    sceneUpdate();
+}
+
+constructInitialScene(scene).then(sceneUpdate => animate(sceneUpdate));

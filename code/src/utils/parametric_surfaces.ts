@@ -1,20 +1,41 @@
 import { BufferGeometry, Material, Mesh, Points, PointsMaterial, Vector3, Vector4 } from "three";
 import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry";
 import { binomial } from "./binomial_coeff";
+import { Registerable } from "./registerable";
 
 const bernsteinBasis = (n: number, i: number): ((t: number) => number) => {
     return (t: number) => binomial(n, i) * (t ** i) * ((1 - t) ** (n - i));
 }
 
-class BezierGeometryMaker {
+abstract class ParametricSurface extends Registerable {
+    abstract samples: number;
+    abstract mesh: Mesh;
+
+    abstract calculateSurfacePoint(u: number, v: number): Vector3;
+    abstract updateSampleCount(samples: number): void;
+    abstract _createGeometry(samples: number): ParametricGeometry;
+
+    getComponents = () => {
+        return {
+            surfaces: [this]
+        }
+    }
+}
+
+class BezierSurface extends ParametricSurface {
     control_points: Vector3[][];
     m: number;
     m_basis: ((t: number) => number)[] = [];
     n: number;
     n_basis: ((t: number) => number)[] = [];
+    samples: number;
+    mesh: Mesh;
 
-    constructor(control_points: Vector3[][]) {
+    constructor(control_points: Vector3[][], samples: number, material: Material) {
+        super();
+
         this.control_points = control_points;
+        this.samples = samples;
 
         this.m = control_points.length;
         this.m_basis = [];
@@ -29,6 +50,8 @@ class BezierGeometryMaker {
         for(let j = 0; j < this.n; j++) {
             this.n_basis.push(bernsteinBasis(this.n - 1, j));
         }
+
+        this.mesh = new Mesh(this._createGeometry(this.samples), material);
     }
 
     calculateSurfacePoint = (u: number, v: number): Vector3 => {
@@ -44,12 +67,20 @@ class BezierGeometryMaker {
         return point;
     }
 
+    updateSampleCount = (samples: number): void => {
+        this.samples = samples;
+        // Need to make a fresh geometry when we update the sample resolution
+        // Automatically updates the generated mesh
+        this.mesh.geometry.dispose();
+        this.mesh.geometry = this._createGeometry(this.samples);
+    }
+
     _calculateSurfacePoint = (u: number, v: number, target: Vector3): void => {
         let point = this.calculateSurfacePoint(u, v);
         target.set(point.x, point.y, point.z);
     }
 
-    createGeometry = (samples: number): ParametricGeometry => {
+    _createGeometry = (samples: number): ParametricGeometry => {
         return new ParametricGeometry(this._calculateSurfacePoint, samples, samples);
     }
 
@@ -75,19 +106,33 @@ const bSplineBasis = (i: number, p: number, U: number[]): ((u: number) => number
     return (u: number) => basis(i, p, u);
 }
 
-class BSplineGeometryMaker {
+class BSplineSurface extends ParametricSurface {
     control_points: Vector3[][];
     m: number;
     n: number;
     u_basis: ((u: number) => number)[];
     v_basis: ((v: number) => number)[];
+    samples: number;
+    mesh: Mesh;
 
-    constructor(control_points: Vector3[][], p: number, q: number, U: number[], V: number[]) {
+    constructor(control_points: Vector3[][], p: number, q: number, U: number[], V: number[], samples: number, material: Material) {
+        super();
+
         this.control_points = control_points;
         this.m = control_points.length;
         this.n = control_points[0].length;
         this.u_basis = [...Array(this.m).keys()].map(i => bSplineBasis(i, p, U));
         this.v_basis = [...Array(this.n).keys()].map(j => bSplineBasis(j, q, V));
+        this.samples = samples;
+        this.mesh = new Mesh(this._createGeometry(this.samples), material);
+    }
+
+    updateSampleCount(samples: number): void {
+        this.samples = samples;
+        // Need to make a fresh geometry when we update the sample resolution
+        // Automatically updates the generated mesh
+        this.mesh.geometry.dispose();
+        this.mesh.geometry = this._createGeometry(this.samples);
     }
 
     calculateSurfacePoint = (u: number, v: number): Vector3 => {
@@ -108,7 +153,7 @@ class BSplineGeometryMaker {
         target.set(point.x, point.y, point.z);
     }
 
-    createGeometry = (samples: number): ParametricGeometry => {
+    _createGeometry = (samples: number): ParametricGeometry => {
         return new ParametricGeometry(this._calculateSurfacePoint, samples, samples);
     }
 
@@ -125,7 +170,7 @@ interface NURBSIntermediateComputation {
     denom: number // overall
 }
 
-class NURBSSurface {
+class NURBSSurface extends ParametricSurface {
     control_points: Vector4[][];
     m: number;
     n: number;
@@ -137,6 +182,8 @@ class NURBSSurface {
     control_point_grid!: Points;
 
     constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[], samples: number, material: Material) {
+        super();
+
         this.control_points = control_points;
         this.m = control_points.length;
         this.n = control_points[0].length;
@@ -254,4 +301,4 @@ class NURBSSurface {
     }
 }
 
-export { BezierGeometryMaker, BSplineGeometryMaker, NURBSSurface };
+export { ParametricSurface, BezierSurface, BSplineSurface, NURBSSurface };

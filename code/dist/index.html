@@ -5,6 +5,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>ACG Coursework</title>
         <link href="style.css" rel="stylesheet" />
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+            } 
+        </style>
         <script>
             let logOpen = false;
 
@@ -19,13 +25,12 @@
             }
         </script>
     </head>
-    <body>
+    <body style="font-family: Arial, sans-serif;">
         <script type="module" src="bundle.js"></script>
         <div 
             style="
                 position: absolute; top: 0; right: 0; max-width: 20%; height: 100%;
                 display: flex; flex-direction: column; justify-content: space-between;
-                font-family: Arial, sans-serif;
             "
         >
             <div style="
@@ -67,5 +72,37 @@
             </div>
 
         </div>
+        <!-- <div
+            style="
+                position: absolute; width: 100%; height: 100%;
+                display: flex; flex-direction: column; justify-content: center; align-items: center;
+            "
+        >
+            <div
+                style="
+                    width: 85%; height: 85%;
+                    border: 0.1rem aqua solid;
+                    background-color: rgba(245, 245, 245, 0.6);
+                    padding: 1rem;
+                    display: flex; flex-direction: column; align-items: center;
+                "
+            >
+                <h1 style="font-weight: 700; font-size: xx-large; margin-bottom: 0.2rem;">Visual Control Settings</h1>
+                <div>
+                    <h2 style="font-weight: 600; font-size: x-large;">Dynamic Control</h2>
+                    <span>Set target framerate; locks all other settings; presets?</span><br />
+                </div>
+                <div>
+                    <h2 style="font-weight: 600; font-size: x-large;">Render Quality</h2>
+                    <span>Level of Detail, Parametric Sample Resolution</span><br />
+                    <span>Animation Quality, Render Distance (Fog), Shadows</span><br />
+                    <span>Post Processing: Anti-aliasing (FXAA, SSAA, SMAA), Bloom, Ambient Occlusion</span>
+                </div>
+                <div>
+                    <h2 style="font-weight: 600; font-size: x-large;">Additional Settings</h2>
+                    <span>Network quality</span><br />
+                </div>
+            </div>
+        </div> -->
     </body>
 </html>
