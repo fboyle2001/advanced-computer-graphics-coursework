@@ -6,8 +6,8 @@ import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
 import { createBikeShed } from './utils/model_store';
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
-import { BezierSurface, LODParametricWrapper, NURBSSurface } from './utils/parametric_surfaces';
-import { Plane, PlaneGeometry, Vector3 } from 'three';
+import { BezierSurface, LODParametricBinder, NURBSSurface } from './utils/parametric_surfaces';
+import { LOD, Plane, PlaneGeometry, Vector3 } from 'three';
 
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
@@ -30,11 +30,48 @@ window.addEventListener('resize', () => {
     primaryRenderPass.scene = scene;
 }, false);
 
-let registeredComponents = new ComponentRegister();
+enum QualityLevel { Low, Medium, High }
+enum AntiAliasing { None, FXAA }
 
 let visualSettings = {
-    surfaceSamples: 20
+    renderQuality: {
+        surfaceSamples: 20,
+        levelsOfDetail: {
+            low: {
+                distance: 30,
+                samples: 4
+            },
+            medium: {
+                distance: 20,
+                samples: 12
+            },
+            high: {
+                distance: 10,
+                samples: 24
+            }
+        },
+        animationQuality: QualityLevel.Medium
+    },
+    postProcessing: {
+        antialiasing: AntiAliasing.None
+    }
 }
+
+const getParametricLevels = () => {
+    let levels: {[distance: number]: number} = {};
+
+    for(const key of Object.keys(visualSettings.renderQuality.levelsOfDetail)) {
+        const { distance, samples } = visualSettings.renderQuality.levelsOfDetail[key as keyof typeof visualSettings.renderQuality.levelsOfDetail];
+        levels[distance] = samples;
+    }
+
+    return levels;
+}
+
+const registeredComponents = new ComponentRegister();
+const levels = getParametricLevels();
+const lodParametricBinder = new LODParametricBinder(levels);
+console.log({levels: lodParametricBinder.levels, num: lodParametricBinder.numericLevelKeys})
 
 const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> => {
     const gridMap = new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg");
@@ -54,7 +91,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
     const bikeShedCount = 3;
 
     for(let i = 0; i < bikeShedCount; i++) {
-        const [bikeShed, registerable] = createBikeShed(visualSettings.surfaceSamples, gridMaterial, brownMaterial, purpleMaterial);
+        const [bikeShed, registerable] = createBikeShed(visualSettings.renderQuality.surfaceSamples, gridMaterial, brownMaterial, purpleMaterial);
         let size = new Vector3();
         new THREE.Box3().setFromObject(bikeShed).getSize(size);
         bikeShed.position.add(new Vector3(0, offset(), (size.z + 0.2) * i));
@@ -71,11 +108,11 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
         gridMaterial
     );
 
-    const lod = new LODParametricWrapper(curvedSection);
-    scene.add(lod.surface.mesh);
+    scene.add(curvedSection.mesh);
+    lodParametricBinder.bindSurface(curvedSection);
 
     return () => {
-        lod.update(camera);
+        lodParametricBinder.updateAll(camera);
     };
 }
 

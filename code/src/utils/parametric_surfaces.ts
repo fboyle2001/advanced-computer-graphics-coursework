@@ -301,35 +301,47 @@ class NURBSSurface extends ParametricSurface {
     }
 }
 
-class LODParametricWrapper extends Registerable {
-    surface: ParametricSurface;
-    currentLevel: number;
-    levels: {[distance: string]: number};
+class LODParametricBinder {
+    boundSurfaces: ParametricSurface[];
+    levels!: {[distance: number]: number};
+    numericLevelKeys!: number[];
 
-    constructor(surface: ParametricSurface) {
-        super();
-        this.surface = surface;
-        this.currentLevel = 0;
-        this.levels = {};
+    constructor(levels: {[distance: number]: number}) {
+        this.boundSurfaces = [];
+        this.setLevels(levels);
     }
 
-    getDistanceToCamera(camera: PerspectiveCamera) {
-        return new Vector3().setFromMatrixPosition(camera.matrixWorld).distanceTo(new Vector3().setFromMatrixPosition(this.surface.mesh.matrixWorld)) / camera.zoom;
+    setLevels(levels: {[distance: number]: number}) {
+        this.levels = levels;
+        this.numericLevelKeys = Object.keys(this.levels).map(level => Number(level)).sort();
     }
 
-    update(camera: PerspectiveCamera) {
-        const distance = this.getDistanceToCamera(camera);
-
-        if(distance < 20) {
-            this.surface.updateSampleCount(40);
-        } else {
-            this.surface.updateSampleCount(10);
-        }
+    bindSurface(surface: ParametricSurface) {
+        this.boundSurfaces.push(surface);
     }
 
-    getComponents(): RegisterableComponents {
-        return {};
+    updateAll(camera: PerspectiveCamera) {
+        const cameraPosition = new Vector3().setFromMatrixPosition(camera.matrixWorld);
+
+        this.boundSurfaces.forEach(surface => {
+            const surfacePosition = new Vector3().setFromMatrixPosition(surface.mesh.matrixWorld);
+            const distanceToCamera = cameraPosition.distanceTo(surfacePosition) / camera.zoom;
+            let levelIdx = 0;
+
+            while(this.numericLevelKeys[levelIdx] < distanceToCamera) {
+                levelIdx++;
+            }
+
+            const level = this.numericLevelKeys[levelIdx];
+            const samples = this.levels[level];
+
+            // console.log({level, distanceToCamera, samples})
+
+            if(surface.samples !== samples) {
+                surface.updateSampleCount(samples);
+            }
+        });
     }
 }
 
-export { ParametricSurface, BezierSurface, BSplineSurface, NURBSSurface, LODParametricWrapper };
+export { ParametricSurface, BezierSurface, BSplineSurface, NURBSSurface, LODParametricBinder };
