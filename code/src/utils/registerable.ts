@@ -44,6 +44,10 @@ class ComponentRegister {
     updateSampleCounts = (samples: number) => {
         this.surfaces.forEach(surface => surface.updateSampleCount(samples));
     }
+
+    setLODModelLevels = (levels: {[distance: string]: number}) => {
+        
+    }
 }
 
 export { Registerable, RegisterableComponents, ComponentRegister };

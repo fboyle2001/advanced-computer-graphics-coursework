@@ -1,22 +1,21 @@
-import THREE, { BufferGeometry, DoubleSide, Group, Material, Mesh, MeshBasicMaterial, TextureLoader, Triangle, Vector3 } from "three";
+import THREE, { BufferGeometry, DoubleSide, Group, Material, Mesh, MeshBasicMaterial, TextureLoader, Vector3 } from "three";
 import { ModelLoader } from "./model_loader";
 import { BezierSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
 import { scene } from "./three_setup";
 
 import chairModelData from '../progressive_meshes/chair_50.json';
-import { createLevelOfDetail } from "./level_of_detail";
 import { RegisterableComponents } from "./registerable";
+import { createLevelOfDetail } from "./level_of_detail";
 
-const levelOfDetailDistances = {
+const initialLODs = {
     low: 20,
     medium: 10,
     high: 0
 }
 
-const eps = (): number => {
-    return Math.random() / 1e6;
-}
+const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
+const classroomCreator = new ModelLoader(scene, `models/custom/classroom/model.gltf`);
 
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): [Group, RegisterableComponents] => {
     const group = new Group();
@@ -118,4 +117,68 @@ const createBillboardTree = (faces: number): Group => {
     return group
 }
 
-export { createBikeShed, createBillboardTree };
+const createClassroom = async (chairMaterial: Material): Promise<[Group, RegisterableComponents]> => {
+    // Table LOD
+    let tableLOD = await createLevelOfDetail({
+        distances: initialLODs,
+        modelFolder: "models/custom/table/",
+        modelName: "model.gltf"
+    });
+
+    tableLOD.rotation.y = Math.PI;
+    tableLOD.position.set(3, 0, 4);
+    
+    const chairProgressiveMesh = new ProgressiveMesh(
+        chairModelData.vertices, 
+        chairModelData.polygons, 
+        chairModelData.maximums.vertices, 
+        chairModelData.maximums.polygons, 
+        chairModelData.reduction
+    );
+    await classroomCreator.loadAndBlock();
+
+    const tableWithChairs = new Group();
+
+    const chairLeft = chairProgressiveMesh.createMesh(chairMaterial);
+    chairLeft.position.set(0, offset(), 0);
+    const chairRight = chairProgressiveMesh.createMesh(chairMaterial);
+    chairRight.position.set(0, offset(), 0.8);
+    const table = tableLOD.clone();
+    table.position.set(0.9, offset(), -0.75);
+
+    tableWithChairs.add(chairLeft);
+    tableWithChairs.add(chairRight);
+    tableWithChairs.add(table);
+
+    tableWithChairs.rotation.y = Math.PI;
+
+    const classroomWithTables = new Group();
+
+    const tablePositions = [
+        [4.25, offset(), -1.25], [4.25, offset(), -3.75], [4.25, offset(), -6.25],
+        [2.75, offset(), -1.25], [2.75, offset(), -3.75], [2.75, offset(), -6.25]
+    ];
+
+    tablePositions.forEach(([x, y, z]) => {
+        const copied = tableWithChairs.clone();
+        copied.position.set(x, y, z); 
+        classroomWithTables.add(copied);
+    });
+
+    const copied = tableWithChairs.clone();
+    copied.rotation.y = -Math.PI / 2;
+    copied.position.set(2, offset(), -9)
+    classroomWithTables.add(copied);
+    
+    classroomCreator.addToScene(m => {
+        m.position.set(0, offset(), 0)
+        classroomWithTables.add(m);
+    });
+
+    return [classroomWithTables, {
+        lods: [tableLOD],
+        progressives: [chairProgressiveMesh]
+    }];
+}
+
+export { createBikeShed, createBillboardTree, createClassroom };

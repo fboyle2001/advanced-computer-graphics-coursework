@@ -32,14 +32,15 @@ class ProgressiveMesh {
         initial_vertices: VertexData[], 
         initial_faces: string[][],
         max_vertices: number,
-        max_faces: number
+        max_faces: number,
+        reductionData: ReductionRecord[]
     ) {
         this.reusableVertexIndices = [];
         this.reusableFaceIndices = [];
 
         this.vertexLimit = max_vertices;
         this.polygonLimit = max_faces;
-        this.reductionData = [];
+        this.reductionData = reductionData;
 
         const vertices = new Float32Array(this.vertexLimit * 3);
         const faces = new Uint16Array(this.polygonLimit * 3);
@@ -101,9 +102,9 @@ class ProgressiveMesh {
         }
     }
 
-    simulateNetworkDataArrival(records: ReductionRecord[], delayPerStep: number) {
+    simulateNetworkDataArrival(delayPerStep: number) {
         const takeStep = () => {
-            if(!records || records.length === 0) {
+            if(!this.reductionData || this.reductionData.length === 0) {
                 let toStep = false;
 
                 do {
@@ -113,7 +114,7 @@ class ProgressiveMesh {
                 return;
             }
 
-            const nextRecord = records.pop();
+            const nextRecord = this.reductionData.pop();
 
             if(!nextRecord) {
                 return;

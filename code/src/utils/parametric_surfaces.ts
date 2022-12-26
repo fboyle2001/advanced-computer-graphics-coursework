@@ -313,7 +313,7 @@ class LODParametricBinder {
 
     setLevels(levels: {[distance: number]: number}) {
         this.levels = levels;
-        this.numericLevelKeys = Object.keys(this.levels).map(level => Number(level)).sort();
+        this.numericLevelKeys = Object.keys(this.levels).map(level => Number(level)).sort((a, b) => a - b);
     }
 
     bindSurface(surface: ParametricSurface) {
@@ -328,14 +328,14 @@ class LODParametricBinder {
             const distanceToCamera = cameraPosition.distanceTo(surfacePosition) / camera.zoom;
             let levelIdx = 0;
 
-            while(this.numericLevelKeys[levelIdx] < distanceToCamera) {
+            while(this.numericLevelKeys[levelIdx] < distanceToCamera && levelIdx != this.numericLevelKeys.length - 1) {
                 levelIdx++;
             }
 
             const level = this.numericLevelKeys[levelIdx];
             const samples = this.levels[level];
 
-            // console.log({level, distanceToCamera, samples})
+            // console.log({levels: this.numericLevelKeys, level, distanceToCamera, samples})
 
             if(surface.samples !== samples) {
                 surface.updateSampleCount(samples);
