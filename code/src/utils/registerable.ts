@@ -1,10 +1,12 @@
-import { ParametricSurface } from "./parametric_surfaces";
+import { PerspectiveCamera, Scene } from "three";
+import { LODParametricBinder, ParametricSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
 
 interface RegisterableComponents {
     lods?: THREE.LOD[],
-    surfaces?: ParametricSurface[],
-    progressives?: ProgressiveMesh[]
+    fixedSurfaces?: ParametricSurface[],
+    progressives?: ProgressiveMesh[],
+    lodSurfaces?: ParametricSurface[]
 }
 
 abstract class Registerable {
@@ -13,13 +15,15 @@ abstract class Registerable {
 
 class ComponentRegister {
     lods: THREE.LOD[];
-    surfaces: ParametricSurface[];
+    fixedSurfaces: ParametricSurface[];
     progressives: ProgressiveMesh[];
+    lodSurfaceBinder: LODParametricBinder;
 
-    constructor() {
+    constructor(parametricLevels: {[distance: number]: number}) {
         this.lods = [];
-        this.surfaces = [];
+        this.fixedSurfaces = [];
         this.progressives = [];
+        this.lodSurfaceBinder = new LODParametricBinder(parametricLevels);
     }
 
     register = (registerable: Registerable): void => {
@@ -28,21 +32,20 @@ class ComponentRegister {
     }
 
     addComponents = (components: RegisterableComponents): void => {
-        if(components.lods) {
-            components.lods.forEach(lod => this.lods.push(lod));
-        }
-
-        if(components.surfaces) {
-            components.surfaces.forEach(surface => this.surfaces.push(surface));
-        }
-
-        if(components.progressives) {
-            components.progressives.forEach(progressive => this.progressives.push(progressive));
-        }
+        components.lods?.forEach(lod => this.lods.push(lod));
+        components.fixedSurfaces?.forEach(fixedSurface => this.fixedSurfaces.push(fixedSurface));
+        components.progressives?.forEach(progressive => this.progressives.push(progressive));
+        components.lodSurfaces?.forEach(lodSurface => this.lodSurfaceBinder.bindSurface(lodSurface));
     }
 
-    updateSampleCounts = (samples: number) => {
-        this.surfaces.forEach(surface => surface.updateSampleCount(samples));
+    toggleDebugMode = (debug: boolean, scene: Scene): void => {}
+
+    updateFixedSampleCounts = (samples: number) => {
+        this.fixedSurfaces.forEach(surface => surface.updateSampleCount(samples));
+    }
+
+    updateParametricLODs = (camera: PerspectiveCamera) => {
+        this.lodSurfaceBinder.updateAll(camera);
     }
 
     stepProgressiveMeshes = () => {

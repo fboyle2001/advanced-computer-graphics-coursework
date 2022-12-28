@@ -1,3 +1,4 @@
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 const defaultPostLoad = (model: THREE.Group): void => {

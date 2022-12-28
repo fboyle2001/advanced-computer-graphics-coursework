@@ -4,7 +4,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
-import { createBikeShed, createClassroom } from './utils/model_store';
+import { createBikeShed, createClassroom, createSportsHall, createTrampoline } from './utils/model_store';
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
 import { BezierSurface, LODParametricBinder, NURBSSurface } from './utils/parametric_surfaces';
 import { BoxGeometry, LOD, Material, Plane, PlaneGeometry, Vector3 } from 'three';
@@ -39,7 +39,7 @@ enum AntiAliasing { None, FXAA, SSAA, SMAA }
 
 let visualSettings = {
     renderQuality: {
-        surfaceSamples: 20,
+        surfaceSamples: 24,
         levelsOfDetail: {
             low: {
                 distance: 30,
@@ -72,18 +72,17 @@ const getParametricLevels = () => {
     return levels;
 }
 
-const registeredComponents = new ComponentRegister();
-const levels = getParametricLevels();
-const lodParametricBinder = new LODParametricBinder(levels);
+const parametricLODLevels = getParametricLevels();
+const registeredComponents = new ComponentRegister(parametricLODLevels);
 
 const updateLevelsOfDetail = (low: {distance: number, samples: number}, medium: {distance: number, samples: number}, high: {distance: number, samples: number}) => {
     visualSettings.renderQuality.levelsOfDetail.low = low;
     visualSettings.renderQuality.levelsOfDetail.medium = medium;
     visualSettings.renderQuality.levelsOfDetail.high = high;
-    lodParametricBinder.setLevels(getParametricLevels());
+    registeredComponents.lodSurfaceBinder.setLevels(getParametricLevels());
 }
 
-const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> => {
+const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.Clock) => void> => {
     const gridMap = new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg");
     gridMap.wrapS = gridMap.wrapT = THREE.RepeatWrapping;
     gridMap.anisotropy = 16;
@@ -121,6 +120,16 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
         side: THREE.DoubleSide
     });
 
+    const classroomRoofMap = new THREE.TextureLoader().load("/textures/classroom_roof.jpg");
+    classroomRoofMap.wrapS = classroomRoofMap.wrapT = THREE.RepeatWrapping;
+    classroomRoofMap.repeat.set(1, 8)
+    classroomRoofMap.anisotropy = 16;
+
+    const classroomRoofMaterial = new THREE.MeshPhongMaterial({
+        map: classroomRoofMap,
+        side: THREE.DoubleSide
+    });
+
     /** START OF BIKE SHEDS */ // 8 30
     const bikeShedPlane = new THREE.Mesh(new BoxGeometry(7.8, 0.6, 30), bikeShedPavementMaterial);
     bikeShedPlane.position.add(new Vector3(3.9, 0.3 - offset(), 15));
@@ -138,8 +147,8 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
         let size = new Vector3();
         new THREE.Box3().setFromObject(bikeShed).getSize(size);
         bikeShed.position.add(new Vector3(0, 0.6 + offset(), (size.z + 0.2) * i));
-        // registeredComponents.addComponents(registerable);
-        registerable.surfaces!.forEach(surface => lodParametricBinder.bindSurface(surface));
+        registeredComponents.addComponents(registerable);
+        // registerable.surfaces!.forEach(surface => lodParametricBinder.bindSurface(surface));
         scene.add(bikeShed);
     }
 
@@ -151,7 +160,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
     carParkPlane.position.add(new Vector3(8 + carParkPlane.geometry.parameters.width / 2, -offset(), 15));
     scene.add(carParkPlane);
 
-    const lowPolyCarLoader = new ModelLoader(scene, "/models/external/low_poly_car/scene.gltf");
+    const lowPolyCarLoader = new ModelLoader(scene, "/models/external/low_poly_car/model_pack.gltf");
     await lowPolyCarLoader.loadAndBlock();
 
     const carColumns = 5;
@@ -172,6 +181,11 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
     entrancePlane.position.set(30, -offset(), 45);
     scene.add(entrancePlane);
 
+    const treeEntrancePlane = new THREE.Mesh(new PlaneGeometry(8.36, 30), blueMaterial);
+    treeEntrancePlane.rotation.x = -Math.PI / 2;
+    treeEntrancePlane.position.set(38.18, -offset(), 45);
+    scene.add(treeEntrancePlane);
+
     /** END OF ENTRANCE */
 
     /** START OF PLAYGROUND */
@@ -185,8 +199,8 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
 
     /** START OF CLASSROOMS */
 
-    const [classroomOne, classroomOneComponents] = await createClassroom(blueMaterial);
-    registeredComponents.addComponents(classroomOneComponents);
+    const [classroomOne, classroomComponents] = await createClassroom(blueMaterial, classroomRoofMaterial);
+    registeredComponents.addComponents(classroomComponents);
     classroomOne.scale.set(3, 3, 3);
     classroomOne.rotation.set(0, Math.PI, 0);
     classroomOne.position.set(60 + offset(), -0.1 + offset(), 100);
@@ -196,39 +210,53 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
     classroomTwo.position.set(45 + offset(), -0.1 + offset(), 100)
     scene.add(classroomTwo);
 
-    // const [classroomTwo, classroomTwoComponents] = await createClassroom(blueMaterial);
-    // registeredComponents.addComponents(classroomTwoComponents);
-    // classroomTwo.scale.set(3, 3, 3);
-    // classroomTwo.rotation.set(0, Math.PI, 0);
-    // classroomTwo.position.set(60, -0.1 + offset(), 100);
-    // scene.add(classroomTwo);
-
     /** END OF CLASSROOMS */
 
+    /** START OF SPORTS HALL */
+
+    const sportsHallBuilding = await createSportsHall();
+    sportsHallBuilding.rotation.set(0, Math.PI, 0)
+    sportsHallBuilding.position.add(new Vector3(60, -offset(), 30));
+    scene.add(sportsHallBuilding);
+
+    // const trampolineBuildingPlane = new THREE.Mesh(new PlaneGeometry(26, 30), carParkMaterial);
+    // trampolineBuildingPlane.rotation.x = -Math.PI / 2;
+    // trampolineBuildingPlane.position.add(new Vector3(34 + trampolineBuildingPlane.geometry.parameters.width / 2, -offset(), 45));
+    // scene.add(trampolineBuildingPlane);
+
+    const [trampoline, trampolineComponents, trampolineUpdate] = await createTrampoline(gridMaterial);
+    registeredComponents.addComponents(trampolineComponents);
+    trampoline.scale.set(1.25, 1.25, 1.25);
+    trampoline.position.set(3.4, 0, -18);
+    sportsHallBuilding.add(trampoline)
+
+    /** END OF SPORTS HALL */
 
     // INITIAL UPDATES
     registeredComponents.setLODModelLevels([10, 20, 30]);
-    registeredComponents.updateSampleCounts(visualSettings.renderQuality.surfaceSamples);
+    registeredComponents.updateFixedSampleCounts(visualSettings.renderQuality.surfaceSamples);
 
     // setTimeout(() => registeredComponents.setLODModelLevels([60, 80, 100]), 2000)
+    // setTimeout(() => updateLevelsOfDetail({ distance: 30, samples: 1 }, { distance: 20, samples: 4 }, { distance: 10, samples: 40 }), 1000)
+    // setTimeout(() => registeredComponents.updateFixedSampleCounts(40), 2000)
 
-    return () => {
-        lodParametricBinder.updateAll(camera);
+    return (clock: THREE.Clock) => {
+        registeredComponents.updateParametricLODs(camera);
         registeredComponents.stepProgressiveMeshes();
-        registeredComponents.lodDebug();
+        trampolineUpdate(clock.getElapsedTime())
     };
 }
 
 const clock = new THREE.Clock()
 
-const animate = (sceneUpdate: () => void) => {
+const animate = (sceneUpdate: (clock: THREE.Clock) => void) => {
     requestAnimationFrame(() => animate(sceneUpdate))
     // controls.update(clock.getDelta());
     controls.update()
     composedRenderer.render();
     stats.update();
     updateStatsDisplay()
-    sceneUpdate();
+    sceneUpdate(clock);
 }
 
 constructInitialScene(scene).then(sceneUpdate => animate(sceneUpdate));

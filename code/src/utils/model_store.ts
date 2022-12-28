@@ -1,8 +1,7 @@
-import THREE, { BufferGeometry, DoubleSide, Group, Material, Mesh, MeshBasicMaterial, TextureLoader, Vector3 } from "three";
+import { BufferGeometry, DoubleSide, Group, Material, Mesh, MeshBasicMaterial, TextureLoader, Vector3, Vector4 } from "three";
 import { ModelLoader } from "./model_loader";
-import { BezierSurface } from "./parametric_surfaces";
+import { BezierSurface, NURBSSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
-import { scene } from "./three_setup";
 
 import chairModelData from '../progressive_meshes/chair_50.json';
 import { RegisterableComponents } from "./registerable";
@@ -15,7 +14,10 @@ const initialLODs = {
 }
 
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
-const classroomCreator = new ModelLoader(scene, `models/custom/classroom/model.gltf`);
+
+const classroomCreator = new ModelLoader(null, `models/custom/classroom/roofless/model.gltf`);
+const trampolineEdgeCreator = new ModelLoader(null, `models/custom/trampoline/model.gltf`);
+const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/model_pack.gltf`);
 
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): [Group, RegisterableComponents] => {
     const group = new Group();
@@ -82,7 +84,7 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     group.add(floor);
 
     return [group, {
-        surfaces: [curvedRoof, curvedSection, otherCurvedSection]
+        lodSurfaces: [curvedRoof, curvedSection, otherCurvedSection]
     }];
 }
 
@@ -117,12 +119,12 @@ const createBillboardTree = (faces: number): Group => {
     return group
 }
 
-const createClassroom = async (chairMaterial: Material): Promise<[Group, RegisterableComponents]> => {
+const createClassroom = async (chairMaterial: Material, roofMaterial: Material): Promise<[Group, RegisterableComponents]> => {
     // Table LOD
     let tableLOD = await createLevelOfDetail({
         distances: initialLODs,
         modelFolder: "models/custom/table/",
-        modelName: "model.gltf"
+        modelName: "model_pack.gltf"
     });
 
     tableLOD.rotation.y = Math.PI;
@@ -175,10 +177,116 @@ const createClassroom = async (chairMaterial: Material): Promise<[Group, Registe
         classroomWithTables.add(m);
     });
 
+    const nsControlPoints = [
+        [
+            new Vector4( 0, 0, 0, 1 ),
+            new Vector4( 0, 0, 3.33, 1 ),
+            new Vector4( 0, 0, 6.67, 1 ),
+            new Vector4( 0, 0, 10, 1 )
+        ],
+        [
+            new Vector4( 1.67, 0, 0, 1 ),
+            new Vector4( 1.67, 2.2, 3.33, 1 ),
+            new Vector4( 1.67, 2.2, 6.67, 1 ),
+            new Vector4( 1.67, 0, 10, 1 )
+        ],
+        [
+            new Vector4( 3.33, 0, 0, 1 ),
+            new Vector4( 3.33, 2.2, 3.33, 1 ),
+            new Vector4( 3.33, 2.2, 6.67, 1 ),
+            new Vector4( 3.33, 0, 10, 1 )
+        ],
+        [
+            new Vector4( 5, 0, 0, 1 ),
+            new Vector4( 5, 0, 3.33, 1 ),
+            new Vector4( 5, 0, 6.67, 1 ),
+            new Vector4( 5, 0, 10, 1 )
+        ]
+    ];
+    
+    const U = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
+    const V = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
+    const p = 3;
+    const q = 3;
+    const samples = 40;
+
+    const roofNURBS = new NURBSSurface(nsControlPoints, p, q, U, V, samples, roofMaterial);
+    roofNURBS.mesh.position.set(0, 2.66 + offset(), -10)
+    classroomWithTables.add(roofNURBS.mesh);
+    roofNURBS.control_point_grid.position.set(0, 2.66 + offset(), -10)
+    classroomWithTables.add(roofNURBS.control_point_grid)
+
     return [classroomWithTables, {
         lods: [tableLOD],
-        progressives: [chairProgressiveMesh]
+        progressives: [chairProgressiveMesh],
+        lodSurfaces: [roofNURBS]
     }];
 }
 
-export { createBikeShed, createBillboardTree, createClassroom };
+const createTrampoline = async (surfaceMaterial: Material): Promise<[Group, RegisterableComponents, (elapsed: number) => void]> => {
+    await trampolineEdgeCreator.loadAndBlock();
+
+    const group = new Group();
+    trampolineEdgeCreator.addToScene(m => {
+        group.add(m);
+    });
+
+    const nsControlPoints = [
+        [
+            new Vector4( 0, 0, 0, 1 ),
+            new Vector4( 0, 0, 2.5, 1 ),
+            new Vector4( 0, 0, 5, 1 ),
+            new Vector4( 0, 0, 7.5, 1 )
+        ],
+        [
+            new Vector4( 2.5, 0, 0, 1 ),
+            new Vector4( 1.875, 0, 1.875, 1 ),
+            new Vector4( 1.875, 0, 5.625, 1 ),
+            new Vector4( 2.5, 0, 7.5, 1 )
+        ],
+        [
+            new Vector4( 5, 0, 0, 1 ),
+            new Vector4( 5.625, 0, 1.875, 1 ),
+            new Vector4( 5.625, 0, 5.625, 1 ),
+            new Vector4( 5, 0, 7.5, 1 )
+        ],
+        [
+            new Vector4( 7.5, 0, 0, 1 ),
+            new Vector4( 7.5, 0, 2.5, 1 ),
+            new Vector4( 7.5, 0, 5, 1 ),
+            new Vector4( 7.5, 0, 7.5, 1 )
+        ]
+    ];
+    
+    const U = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
+    const V = [ 0, 0, 0, 0, 1, 1, 1, 1 ];
+    const p = 3;
+    const q = 3;
+    const samples = 40;
+
+    const bouncySurface = new NURBSSurface(nsControlPoints, p, q, U, V, samples, surfaceMaterial);
+    bouncySurface.mesh.position.set(0.25, 0.78, 0.25)
+    bouncySurface.control_point_grid.position.set(0.25, 0.78, 0.25)
+    group.add(bouncySurface.mesh);
+    group.add(bouncySurface.control_point_grid);
+    const bounceFactor = 1.2;
+    const bounceDepth = 0.5;
+
+    return [group, {
+        fixedSurfaces: [bouncySurface]
+    }, (elapsed) => {
+        bouncySurface.updateControlPoint(1, 1, new Vector3(1.875, bounceFactor * Math.sin(Math.PI * elapsed) - bounceDepth, 1.875))
+        bouncySurface.updateControlPoint(1, 2, new Vector3(1.875, bounceFactor * Math.sin(Math.PI * (elapsed + 0.25)) - bounceDepth, 5.625))
+        bouncySurface.updateControlPoint(2, 1, new Vector3(5.625, bounceFactor * Math.sin(Math.PI * (elapsed + 0.5)) - bounceDepth, 1.875))
+        bouncySurface.updateControlPoint(2, 2, new Vector3(5.625, bounceFactor * Math.sin(Math.PI * (elapsed + 0.75)) - bounceDepth, 5.625))
+    }];
+}
+
+const createSportsHall = async (): Promise<Group> => {
+    await sportsHallCreator.loadAndBlock();
+    const group = new Group();
+    sportsHallCreator.addToScene(m => group.add(m));
+    return group;
+}
+
+export { createBikeShed, createBillboardTree, createClassroom, createTrampoline, createSportsHall };

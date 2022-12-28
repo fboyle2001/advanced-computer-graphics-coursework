@@ -17,7 +17,7 @@ abstract class ParametricSurface extends Registerable {
 
     getComponents = () => {
         return {
-            surfaces: [this]
+            fixedSurfaces: [this]
         }
     }
 }

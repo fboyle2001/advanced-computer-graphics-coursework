@@ -136,6 +136,10 @@ const updateStatsDisplay = () => {
     if(document.getElementById("geometry_count") !== null) {
         (document.getElementById("geometry_count") as HTMLElement).innerHTML = `${renderer.info.memory.geometries}`;
     }
+
+    if(document.getElementById("calls_count") !== null) {
+        (document.getElementById("calls_count") as HTMLElement).innerHTML = `${renderer.info.render.calls}`;
+    }
 }
 
 export { renderer, scene, camera, controls, stats, updateStatsDisplay };
