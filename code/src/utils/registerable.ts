@@ -45,8 +45,22 @@ class ComponentRegister {
         this.surfaces.forEach(surface => surface.updateSampleCount(samples));
     }
 
-    setLODModelLevels = (levels: {[distance: string]: number}) => {
-        
+    stepProgressiveMeshes = () => {
+        this.progressives.forEach(progressive => progressive.stepMesh());
+    }
+
+    lodDebug = () => {
+        this.lods.forEach(l => console.log({n: l.name, l: l.levels}))
+    }
+
+    setLODModelLevels = (distances: number[]) => {
+        const orderedDistances = distances.sort((a, b) => a - b);
+
+        this.lods.forEach(lod => {
+            for(let i = 0; i < lod.levels.length; i++) {
+                lod.levels[i].distance = orderedDistances[i];
+            }
+        })
     }
 }
 

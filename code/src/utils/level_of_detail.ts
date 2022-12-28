@@ -28,17 +28,11 @@ const createLevelOfDetail = async (config: LevelOfDetailConfiguration, postLoad?
 
     for(const key of Object.keys(config.distances)) {
         const distance = config.distances[key];
-        const tableLoader = new GLTFLoader();
+        const loader = new GLTFLoader();
 
-        const gltf = await tableLoader.loadAsync(`${config.modelFolder}${key}/${config.modelName}`);
+        const gltf = await loader.loadAsync(`${config.modelFolder}${key}/${config.modelName}`);
         postLoadDefaulted(gltf.scene);
         lod.addLevel(gltf.scene, distance);
-
-        tableLoader.load(`${config.modelFolder}${key}/${config.modelName}`, (gltf) => {
-            const model = gltf.scene;
-            postLoadDefaulted(model);
-            lod.addLevel(model, distance);
-        }, undefined, console.error);
     }
 
     // Have to async/await due to the issues with cloning

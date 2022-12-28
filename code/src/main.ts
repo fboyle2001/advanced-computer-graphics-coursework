@@ -207,17 +207,24 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<() => void> =>
 
 
     // INITIAL UPDATES
-    registeredComponents.setLODModelLevels({});
+    registeredComponents.setLODModelLevels([10, 20, 30]);
     registeredComponents.updateSampleCounts(visualSettings.renderQuality.surfaceSamples);
+
+    // setTimeout(() => registeredComponents.setLODModelLevels([60, 80, 100]), 2000)
 
     return () => {
         lodParametricBinder.updateAll(camera);
+        registeredComponents.stepProgressiveMeshes();
+        registeredComponents.lodDebug();
     };
 }
 
+const clock = new THREE.Clock()
+
 const animate = (sceneUpdate: () => void) => {
     requestAnimationFrame(() => animate(sceneUpdate))
-    controls.update();
+    // controls.update(clock.getDelta());
+    controls.update()
     composedRenderer.render();
     stats.update();
     updateStatsDisplay()

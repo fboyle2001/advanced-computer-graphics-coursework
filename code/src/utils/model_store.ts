@@ -9,9 +9,9 @@ import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
 
 const initialLODs = {
-    low: 20,
-    medium: 10,
-    high: 0
+    low: 30,
+    medium: 20,
+    high: 10
 }
 
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;

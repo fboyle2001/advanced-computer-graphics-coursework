@@ -28,7 +28,7 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
 
 const animate = (updateScene: () => void) => {
     requestAnimationFrame(() => animate(updateScene));
-    controls.update();
+    // controls.update();
     renderer.render(scene, camera)
     stats.update();
     updateStatsDisplay();
