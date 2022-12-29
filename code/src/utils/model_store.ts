@@ -1,4 +1,4 @@
-import { BufferGeometry, DoubleSide, Group, LOD, Material, Mesh, MeshBasicMaterial, MeshPhongMaterial, PlaneGeometry, TextureLoader, Vector3, Vector4 } from "three";
+import { BufferGeometry, DoubleSide, FrontSide, Group, LOD, Material, Mesh, MeshBasicMaterial, MeshPhongMaterial, PlaneGeometry, sRGBEncoding, TextureLoader, Vector3, Vector4 } from "three";
 import { ModelLoader } from "./model_loader";
 import { BezierSurface, BSplineSurface, NURBSSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
@@ -21,6 +21,7 @@ const trampolineEdgeCreator = new ModelLoader(null, `models/custom/trampoline/mo
 const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/model_pack.gltf`);
 const corridorCreator = new ModelLoader(null, `models/custom/corridor/model.gltf`);
 let riggedTree: SkeletalModel | null = null;
+let savedTree: Group | null = null;
 
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): [Group, RegisterableComponents] => {
     const group = new Group();
@@ -91,14 +92,19 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     }];
 }
 
-const createBillboardTree = async (faces: number): Promise<[Group, RegisterableComponents]> => {
+const createBillboardTree = async (faces: number): Promise<[Group, RegisterableComponents | null]> => {
+    // console.log({savedTree})
+    // if(savedTree !== null) {
+    //     console.log({savedTree})
+    //     return [savedTree, null];
+    // }
     const billboardTexture = new TextureLoader().load("/textures/tree_billboard.png");
-    const billboardMaterial = new MeshPhongMaterial({
+    billboardTexture.encoding = sRGBEncoding;
+    const billboardMaterial = new MeshBasicMaterial({
         map: billboardTexture,
         transparent: true,
-        depthTest: false,
-        side: DoubleSide,
-        
+        depthTest: true,
+        side: DoubleSide
     });
     
     const group = new Group();
@@ -120,11 +126,14 @@ const createBillboardTree = async (faces: number): Promise<[Group, RegisterableC
 
     const lod = new LOD();
     lod.addLevel(group, 30);
-    // lod.addLevel(group, 20);
+    lod.addLevel(group.clone(), 20);
     lod.addLevel(skinnedTree, 10);
 
     const retGroup = new Group();
     retGroup.add(lod);
+
+    // savedTree = retGroup.clone();
+    // console.log("created")
     
     return [retGroup, {
         lods: [lod]
@@ -424,4 +433,83 @@ const createCorridor = async (roofMaterial: Material): Promise<Group> => {
     return group;
 }
 
-export { createBikeShed, createBillboardTree, createClassroom, createTrampoline, createSportsHall, createPond, createCorridor };
+const createSportsField = (surfaceMaterial: Material): [Group, RegisterableComponents, (elapsed: number) => void] => {
+    const group = new Group();
+
+    const nsControlPoints = [
+        [
+            new Vector4( 0, 0, 0, 1 ),
+            new Vector4( 0, 0, 14, 1 ),
+            new Vector4( 0, 0, 28, 1 ),
+            new Vector4( 0, 0, 42, 1 ),
+            new Vector4( 0, 0, 56, 1 ),
+            new Vector4( 0, 0, 70, 1 )
+        ],
+        [
+            new Vector4( 12, 0, 0, 1 ),
+            new Vector4( 12, 0, 14, 2 ),
+            new Vector4( 12, 0, 28, 2 ),
+            new Vector4( 12, 0, 42, 2 ),
+            new Vector4( 12, 0, 56, 2 ),
+            new Vector4( 12, 0, 70, 1 )
+        ],
+        [
+            new Vector4( 24, 0, 0, 1 ),
+            new Vector4( 24, 0, 14, 3 ),
+            new Vector4( 24, 0, 28, 6 ),
+            new Vector4( 24, 0, 42, 6 ),
+            new Vector4( 24, 0, 56, 3 ),
+            new Vector4( 24, 0, 70, 1 )
+        ],
+        [
+            new Vector4( 36, 0, 0, 1 ),
+            new Vector4( 36, 0, 14, 3 ),
+            new Vector4( 36, 0, 28, 6 ),
+            new Vector4( 36, 0, 42, 6 ),
+            new Vector4( 36, 0, 56, 3 ),
+            new Vector4( 36, 0, 70, 1 )
+        ],
+        [
+            new Vector4( 48, 0, 0, 1 ),
+            new Vector4( 48, 0, 14, 2 ),
+            new Vector4( 48, 0, 28, 2 ),
+            new Vector4( 48, 0, 42, 2 ),
+            new Vector4( 48, 0, 56, 2 ),
+            new Vector4( 48, 0, 70, 1 )
+        ],
+        [
+            new Vector4( 60, 0, 0, 1 ),
+            new Vector4( 60, 0, 14, 1 ),
+            new Vector4( 60, 0, 28, 1 ),
+            new Vector4( 60, 0, 42, 1 ),
+            new Vector4( 60, 0, 56, 1 ),
+            new Vector4( 60, 0, 70, 1 )
+        ]
+    ];
+
+    const p = 2;
+    const U = [0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1]
+    const q = 3;
+    const V = [0, 0, 0, 0, 0.33, 0.66, 1, 1, 1, 1]
+
+    const samples = 40;
+
+    const fieldSurface = new NURBSSurface(nsControlPoints, p, q, U, V, samples, surfaceMaterial, 0.5);
+    group.add(fieldSurface.mesh);
+    group.add(fieldSurface.control_point_grid);
+
+    return [group, {
+        fixedSurfaces: [fieldSurface]
+    }, (elapsed) => {
+        [...Array(6).keys()].forEach(i => {
+            [...Array(6).keys()].forEach(j => {
+                const oldPoint = fieldSurface.control_points[i][j];
+                // fieldSurface.updateControlPoint(i, j, 
+                //     new Vector3(oldPoint.x, (12.5 - ((i - 2.5) ** 2 + (j - 2.5) ** 2)) * -1 * (Math.sin(Math.PI * elapsed * (i - 5) * (j - 5) * i * j / 40) + 1), oldPoint.z)
+                // )
+            })
+        })
+    }];
+}
+
+export { createBikeShed, createBillboardTree, createClassroom, createTrampoline, createSportsHall, createPond, createCorridor, createSportsField };

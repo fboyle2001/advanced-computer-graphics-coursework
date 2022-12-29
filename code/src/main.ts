@@ -4,7 +4,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
-import { createBikeShed, createBillboardTree, createClassroom, createCorridor, createPond, createSportsHall, createTrampoline } from './utils/model_store';
+import { createBikeShed, createBillboardTree, createClassroom, createCorridor, createPond, createSportsField, createSportsHall, createTrampoline } from './utils/model_store';
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
 import { BezierSurface, LODParametricBinder, NURBSSurface } from './utils/parametric_surfaces';
 import { BoxGeometry, LOD, Material, Plane, PlaneGeometry, Vector3 } from 'three';
@@ -215,11 +215,17 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const carParkTreePlane = new THREE.Mesh(new PlaneGeometry(20, 30), greenMaterial);
     carParkTreePlane.rotation.x = -Math.PI / 2;
     carParkTreePlane.position.set(48, offset(), 15);
+
+    const carParkTreeGroup = new THREE.Group();
+    const [tree, treeComponents] = await createBillboardTree(2);
+    carParkTreeGroup.add(tree)
+    carParkTreeGroup.position.set(0, 0, 3)
+
+    carParkTreeGroup.rotation.x = Math.PI / 2;
+    carParkTreePlane.add(carParkTreeGroup);
     scene.add(carParkTreePlane)
 
-    const [tree, treeComponents] = await createBillboardTree(4);
-    tree.position.set(0, 5, 0);
-    scene.add(tree);
+    // scene.add(tree);
 
 
     const longCarParkTreePlane = new THREE.Mesh(new PlaneGeometry(20, 240), greenMaterial);
@@ -326,6 +332,19 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** END OF POND */
 
+    /** START OF OUTSIDE FIELD */
+
+    const outsideFieldPath = new THREE.Mesh(new PlaneGeometry(20, 110), redMaterial);
+    outsideFieldPath.position.set(10, -offset(), 60 + 110/2);
+    outsideFieldPath.rotation.x = -Math.PI / 2;
+    scene.add(outsideFieldPath);
+
+    const [outsideFieldSurface, outsideFieldComponents, outsideFieldUpdate] = createSportsField(gridMaterial);
+    outsideFieldSurface.position.set(0, -offset(), 170);
+    scene.add(outsideFieldSurface);
+
+    /** END OF OUTSIDE FIELD */
+
     // INITIAL UPDATES
     registeredComponents.setLODModelLevels([10, 20, 30]);
     registeredComponents.updateFixedSampleCounts(visualSettings.renderQuality.surfaceSamples);
@@ -339,6 +358,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         registeredComponents.stepProgressiveMeshes();
         trampolineUpdate(clock.getElapsedTime())
         pondUpdate(clock.getElapsedTime());
+        outsideFieldUpdate(clock.getElapsedTime());
     };
 }
 
