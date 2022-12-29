@@ -4,7 +4,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
-import { createBikeShed, createBillboardTree, createClassroom, createCorridor, createPond, createSportsField, createSportsHall, createTrampoline } from './utils/model_store';
+import { createBikeShed, createClassroom, createCorridor, createPond, createSportsField, createSportsHall, createTrampoline } from './utils/model_store';
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
 import { BezierSurface, LODParametricBinder, NURBSSurface } from './utils/parametric_surfaces';
 import { BoxGeometry, LOD, Material, Plane, PlaneGeometry, Vector3 } from 'three';
@@ -140,6 +140,16 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         side: THREE.DoubleSide
     });
 
+    const billboardTexture = new THREE.TextureLoader().load("/textures/tree_billboard.png");
+    billboardTexture.encoding =THREE.sRGBEncoding;
+
+    const billboardMaterial = new THREE.MeshBasicMaterial({
+        map: billboardTexture,
+        transparent: true,
+        depthTest: true,
+        side: THREE.DoubleSide
+    });
+
     /** START OF OUTSIDE ROAD */
 
     const outsideRoadPlane = new THREE.Mesh(new PlaneGeometry(200, 15), redMaterial);
@@ -216,13 +226,13 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     carParkTreePlane.rotation.x = -Math.PI / 2;
     carParkTreePlane.position.set(48, offset(), 15);
 
-    const carParkTreeGroup = new THREE.Group();
-    const [tree, treeComponents, treeUpdate] = await createBillboardTree(2);
-    carParkTreeGroup.add(tree)
-    carParkTreeGroup.position.set(0, 0, 3)
+    // const carParkTreeGroup = new THREE.Group();
+    // const [tree, treeComponents, treeUpdate] = await createBillboardTree(2);
+    // carParkTreeGroup.add(tree)
+    // carParkTreeGroup.position.set(0, 0, 3)
 
-    carParkTreeGroup.rotation.x = Math.PI / 2;
-    carParkTreePlane.add(carParkTreeGroup);
+    // carParkTreeGroup.rotation.x = Math.PI / 2;
+    // carParkTreePlane.add(carParkTreeGroup);
     scene.add(carParkTreePlane)
 
     // scene.add(tree);
@@ -359,7 +369,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         trampolineUpdate(clock.getElapsedTime())
         pondUpdate(clock.getElapsedTime());
         outsideFieldUpdate(clock.getElapsedTime());
-        treeUpdate(clock.getElapsedTime());
+        // treeUpdate(clock.getElapsedTime());
     };
 }
 

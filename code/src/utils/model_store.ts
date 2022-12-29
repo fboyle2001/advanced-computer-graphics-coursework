@@ -6,8 +6,7 @@ import { ProgressiveMesh } from "./progressive_mesh";
 import chairModelData from '../progressive_meshes/chair_50.json';
 import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
-import { SkeletalModel } from "./skeletal_model";
-import { CCDIKSolver } from "three/examples/jsm/animation/CCDIKSolver";
+import { SharedInverseAnimatedModel, SkeletalModel } from "./skeletal_model";
 
 const initialLODs = {
     low: 30,
@@ -21,8 +20,6 @@ const classroomCreator = new ModelLoader(null, `models/custom/classroom/roofless
 const trampolineEdgeCreator = new ModelLoader(null, `models/custom/trampoline/model.gltf`);
 const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/model_pack.gltf`);
 const corridorCreator = new ModelLoader(null, `models/custom/corridor/model.gltf`);
-let riggedTree: SkeletalModel | null = null;
-let savedTree: Group | null = null;
 
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): [Group, RegisterableComponents] => {
     const group = new Group();
@@ -93,21 +90,7 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     }];
 }
 
-const createBillboardTree = async (faces: number): Promise<[Group, RegisterableComponents, (elapsed: number) => void]> => {
-    // console.log({savedTree})
-    // if(savedTree !== null) {
-    //     console.log({savedTree})
-    //     return [savedTree, null];
-    // }
-    const billboardTexture = new TextureLoader().load("/textures/tree_billboard.png");
-    billboardTexture.encoding = sRGBEncoding;
-    const billboardMaterial = new MeshBasicMaterial({
-        map: billboardTexture,
-        transparent: true,
-        depthTest: true,
-        side: DoubleSide
-    });
-    
+const createBillboarded = (faces: number, billboardMaterial: Material): Group => {
     const group = new Group();
 
     for(let i = 0; i < faces; i++) {
@@ -116,60 +99,73 @@ const createBillboardTree = async (faces: number): Promise<[Group, RegisterableC
         group.add(otherFace);
     }
 
-    if(!riggedTree) {
-        riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/r/rigged_2.glb")
-    }
+    return group;
+}
 
-    const skinnedTree = new Group();
-    skinnedTree.add(riggedTree.skinned_mesh);
-    skinnedTree.add(riggedTree.model);
-    skinnedTree.add(riggedTree.skeleton_helper);
+const createTreeMaker = async (billboardMaterial: Material): Promise<[SharedInverseAnimatedModel, () => [LOD, RegisterableComponents]]> => {
+    const billboarded = createBillboarded(2, billboardMaterial);
+    const riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/r/rigged_2.glb");
 
-    const lod = new LOD();
-    lod.addLevel(group, 30);
-    lod.addLevel(group.clone(), 20);
-    lod.addLevel(skinnedTree, 10);
-
-    const retGroup = new Group();
-    retGroup.add(lod);
-
-    const left = createCubicBezierCurve(new Vector2(0, 0), new Vector2(0.3, 0.2), new Vector2(0.7, 1.2), new Vector2(1, 0.7))
-    const right = createCubicBezierCurve(new Vector2(1, 0.7), new Vector2(1.3, 0.2), new Vector2(1.7, -0.1), new Vector2(2, 0))
-
+    const curveOne = createCubicBezierCurve(new Vector2(0, 0), new Vector2(0.3, 0.2), new Vector2(0.7, 1.2), new Vector2(1, 0.7))
+    const curveTwo = createCubicBezierCurve(new Vector2(1, 0.7), new Vector2(1.3, 0.2), new Vector2(1.7, -0.1), new Vector2(2, 0))
     const animationCurve = (_t: number) => {
         const t = _t % 2;
 
         if(t < 1) {
-            return left(t);
+            return curveOne(t);
         }
 
-        return right(t - 1);
+        return curveTwo(t - 1);
     }
 
-    // savedTree = retGroup.clone();
-    // console.log("created")
-
-    const ikSolver = new CCDIKSolver(riggedTree.skinned_mesh, [
+    const treeMaker = new SharedInverseAnimatedModel(
+        riggedTree,
         {
-            "effector": 3,
-            "iteration": 10,
-            // @ts-ignore
-            "links": [{index: 2}, {index: 1}], 
-            "maxAngle": 0.0001,
-            "target": 4
+            boneIndex: riggedTree.bone_map["BoneTarget"],
+            target: (clock: THREE.Clock): THREE.Vector3 => {
+                return new Vector3(animationCurve(clock.getElapsedTime()), 6, 0);
+            }
+        },
+        {
+            low: {
+                "effector": 3,
+                "iteration": 1,
+                // @ts-ignore
+                "links": [{index: 2}], 
+                "maxAngle": 0.005,
+                "target": 4
+            },
+            medium: {
+                "effector": 3,
+                "iteration": 5,
+                // @ts-ignore
+                "links": [{index: 2}, {index: 1}], 
+                "maxAngle": 0.0025,
+                "target": 4
+            },
+            high: {
+                "effector": 3,
+                "iteration": 10,
+                // @ts-ignore
+                "links": [{index: 2}, {index: 1}], 
+                "maxAngle": 0.0001,
+                "target": 4
+            }
+        },
+        "low"
+    );
+
+    return [treeMaker,
+        () => {
+            const lod = new LOD();
+
+            lod.addLevel(billboarded.clone(), 30);
+            lod.addLevel(billboarded.clone(), 20);
+            lod.addLevel(treeMaker.spawnObject(), 10);
+
+            return [lod, { lods: [lod] }]
         }
-    ]);
-    
-    return [retGroup, {
-        lods: [lod]
-    }, (elapsed: number) => {
-        // console.log({level: lod.getCurrentLevel()})
-        if(lod.getCurrentLevel() === 0) {
-            riggedTree!.getBone("BoneTarget").position.copy(new Vector3(animationCurve(elapsed), 6, 0));
-            // visualTarget.position.copy(target);
-            ikSolver.update();
-        }
-    }]
+    ];
 }
 
 const createClassroom = async (chairMaterial: Material, roofMaterial: Material): Promise<[Group, RegisterableComponents]> => {
@@ -544,4 +540,4 @@ const createSportsField = (surfaceMaterial: Material): [Group, RegisterableCompo
     }];
 }
 
-export { createBikeShed, createBillboardTree, createClassroom, createTrampoline, createSportsHall, createPond, createCorridor, createSportsField };
+export { createBikeShed, createBillboarded, createClassroom, createTrampoline, createSportsHall, createPond, createCorridor, createSportsField, createTreeMaker };

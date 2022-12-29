@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { BoxGeometry, Vector2, Vector3 } from 'three';
-import { SkeletalModel } from './utils/skeletal_model';
+import { SkeletalModel, SharedInverseAnimatedModel } from './utils/skeletal_model';
 import { renderer, scene, camera, controls, stats, updateStatsDisplay } from './utils/three_setup';
 import { createCubicBezierCurve } from './utils/parametric_surfaces';
-import { SharedInverseAnimatedModel } from './utils/animated_tree';
+import { createTreeMaker } from './utils/model_store';
 
 /* CONFIGURATION */
 // Config this to simulate network arrival
@@ -34,73 +34,20 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         depthTest: true,
         side: THREE.DoubleSide
     });
-    
-    const group = new THREE.Group();
 
-    for(let i = 0; i < 2; i++) {
-        const otherFace = new THREE.Mesh(new THREE.PlaneGeometry(4, 4 * 417/216), billboardMaterial);
-        otherFace.rotateY(i * Math.PI / 2)
-        group.add(otherFace);
-    }
+    const [treeMaker, spawnNewTreeLOD] = await createTreeMaker(billboardMaterial)
 
-    const riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/r/rigged_2.glb");
-
-    const curveOne = createCubicBezierCurve(new Vector2(0, 0), new Vector2(0.3, 0.2), new Vector2(0.7, 1.2), new Vector2(1, 0.7))
-    const curveTwo = createCubicBezierCurve(new Vector2(1, 0.7), new Vector2(1.3, 0.2), new Vector2(1.7, -0.1), new Vector2(2, 0))
-    const animationCurve = (_t: number) => {
-        const t = _t % 2;
-
-        if(t < 1) {
-            return curveOne(t);
-        }
-
-        return curveTwo(t - 1);
-    }
-
-    const treeMaker = new SharedInverseAnimatedModel(
-        riggedTree,
-        {
-            boneIndex: riggedTree.bone_map["BoneTarget"],
-            target: (clock: THREE.Clock): THREE.Vector3 => {
-                return new Vector3(animationCurve(clock.getElapsedTime()), 6, 0);
-            }
-        },
-        {
-            low: {
-                "effector": 3,
-                "iteration": 10,
-                // @ts-ignore
-                "links": [{index: 2}], 
-                "maxAngle": 0.0001,
-                "target": 4
-            },
-            medium: {
-                "effector": 3,
-                "iteration": 10,
-                // @ts-ignore
-                "links": [{index: 2}, {index: 1}], 
-                "maxAngle": 0.0001,
-                "target": 4
-            }
-        },
-        "low"
-    );
+    // Register the treeMaker with the QC settings
 
     // setTimeout(() => treeMaker.setAnimationLevel("medium"), 2500)
+    // setTimeout(() => treeMaker.setAnimationLevel("high"), 5000)
     
     const treeGroup = new THREE.Group();
 
     for(let i = 0; i < 5; i++) {
         for(let j = 0; j < 5; j++) {
-            const spawned = treeMaker.spawnObject();
-            // spawned.position.set(5 * i, 0, 5 * j);
-
-            const lod = new THREE.LOD();
-            lod.addLevel(group.clone(), 30);
-            lod.addLevel(group.clone(), 20);
-            lod.addLevel(spawned, 10);
-            lod.position.set(5 * i, 0, 5 * j)
-
+            const [lod, components] = spawnNewTreeLOD();
+            lod.position.set(5 * i, 0, 5 * j);
             scene.add(lod);
         }
     }
