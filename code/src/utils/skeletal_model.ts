@@ -23,7 +23,6 @@ const recursiveHierarchy = (bone: Bone): {[name: string]: Object | null} | null 
 class SkeletalModel {
     model: Group
     skinned_mesh: SkinnedMesh
-    skeleton: Skeleton
     bone_map: {[name: string]: number}
     skeleton_helper: SkeletonHelper
     stored_skeleton_positions: {[name: string]: {[bone: string]: StoredBoneState}}
@@ -53,15 +52,14 @@ class SkeletalModel {
     private constructor(model: Group, skinned_mesh: SkinnedMesh) {
         this.model = model;
         this.skinned_mesh = skinned_mesh
-        this.skeleton = skinned_mesh.skeleton;
-        this.bone_map = this.skeleton.bones.reduce((store: {[name: string]: number}, bone, idx) => (store[bone.name] = idx, store), {});
+        this.bone_map = this.skinned_mesh.skeleton.bones.reduce((store: {[name: string]: number}, bone, idx) => (store[bone.name] = idx, store), {});
         this.skeleton_helper = new SkeletonHelper(this.model);
         this.stored_skeleton_positions = {};
 
         let defaultBoneStates: {[bone: string]: StoredBoneState} = {};
 
         this.getBoneNames().forEach(bone_name => {
-            const bone = this.skeleton.bones[this.bone_map[bone_name]];
+            const bone = this.skinned_mesh.skeleton.bones[this.bone_map[bone_name]];
             defaultBoneStates[bone_name] = {
                 rotation: bone.rotation,
                 position: bone.position
@@ -86,7 +84,7 @@ class SkeletalModel {
 
     getCurrentState() {
         return Object.keys(this.bone_map).reduce((dict: {[bone: string]: StoredBoneState}, name) => {
-            const bone = this.skeleton.bones[this.bone_map[name]];
+            const bone = this.skinned_mesh.skeleton.bones[this.bone_map[name]];
 
             dict[name] = {
                 rotation: bone.rotation,
@@ -106,17 +104,17 @@ class SkeletalModel {
         Object.keys(state).forEach(bone_name => {
             const rot = state[bone_name].rotation;
             const pos = state[bone_name].position;
-            this.skeleton.bones[this.bone_map[bone_name]].rotation.set(rot.x, rot.y, rot.z, rot.order);
-            this.skeleton.bones[this.bone_map[bone_name]].position.set(pos.x, pos.y, pos.z);
+            this.skinned_mesh.skeleton.bones[this.bone_map[bone_name]].rotation.set(rot.x, rot.y, rot.z, rot.order);
+            this.skinned_mesh.skeleton.bones[this.bone_map[bone_name]].position.set(pos.x, pos.y, pos.z);
         })
     }
 
     getBone(bone_name: string): Bone {
-        return this.skeleton.bones[this.bone_map[bone_name]];
+        return this.skinned_mesh.skeleton.bones[this.bone_map[bone_name]];
     }
 
     getSkeletonHierarchy() {
-        const root = this.skeleton.bones[0];
+        const root = this.skinned_mesh.skeleton.bones[0];
         return {[root.name]: recursiveHierarchy(root)};
     }
 

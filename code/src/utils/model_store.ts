@@ -1,12 +1,13 @@
-import { BufferGeometry, DoubleSide, FrontSide, Group, LOD, Material, Mesh, MeshBasicMaterial, MeshPhongMaterial, PlaneGeometry, sRGBEncoding, TextureLoader, Vector3, Vector4 } from "three";
+import { BufferGeometry, DoubleSide, FrontSide, Group, LOD, Material, Mesh, MeshBasicMaterial, MeshPhongMaterial, PlaneGeometry, sRGBEncoding, TextureLoader, Vector2, Vector3, Vector4 } from "three";
 import { ModelLoader } from "./model_loader";
-import { BezierSurface, BSplineSurface, NURBSSurface } from "./parametric_surfaces";
+import { BezierSurface, BSplineSurface, createCubicBezierCurve, NURBSSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
 
 import chairModelData from '../progressive_meshes/chair_50.json';
 import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
 import { SkeletalModel } from "./skeletal_model";
+import { CCDIKSolver } from "three/examples/jsm/animation/CCDIKSolver";
 
 const initialLODs = {
     low: 30,
@@ -92,7 +93,7 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     }];
 }
 
-const createBillboardTree = async (faces: number): Promise<[Group, RegisterableComponents | null]> => {
+const createBillboardTree = async (faces: number): Promise<[Group, RegisterableComponents, (elapsed: number) => void]> => {
     // console.log({savedTree})
     // if(savedTree !== null) {
     //     console.log({savedTree})
@@ -116,7 +117,7 @@ const createBillboardTree = async (faces: number): Promise<[Group, RegisterableC
     }
 
     if(!riggedTree) {
-        riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/r/rigged.glb")
+        riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/r/rigged_2.glb")
     }
 
     const skinnedTree = new Group();
@@ -132,11 +133,42 @@ const createBillboardTree = async (faces: number): Promise<[Group, RegisterableC
     const retGroup = new Group();
     retGroup.add(lod);
 
+    const left = createCubicBezierCurve(new Vector2(0, 0), new Vector2(0.3, 0.2), new Vector2(0.7, 1.2), new Vector2(1, 0.7))
+    const right = createCubicBezierCurve(new Vector2(1, 0.7), new Vector2(1.3, 0.2), new Vector2(1.7, -0.1), new Vector2(2, 0))
+
+    const animationCurve = (_t: number) => {
+        const t = _t % 2;
+
+        if(t < 1) {
+            return left(t);
+        }
+
+        return right(t - 1);
+    }
+
     // savedTree = retGroup.clone();
     // console.log("created")
+
+    const ikSolver = new CCDIKSolver(riggedTree.skinned_mesh, [
+        {
+            "effector": 3,
+            "iteration": 10,
+            // @ts-ignore
+            "links": [{index: 2}, {index: 1}], 
+            "maxAngle": 0.0001,
+            "target": 4
+        }
+    ]);
     
     return [retGroup, {
         lods: [lod]
+    }, (elapsed: number) => {
+        // console.log({level: lod.getCurrentLevel()})
+        if(lod.getCurrentLevel() === 0) {
+            riggedTree!.getBone("BoneTarget").position.copy(new Vector3(animationCurve(elapsed), 6, 0));
+            // visualTarget.position.copy(target);
+            ikSolver.update();
+        }
     }]
 }
 

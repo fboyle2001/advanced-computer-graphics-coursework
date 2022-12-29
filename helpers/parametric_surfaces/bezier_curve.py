@@ -52,4 +52,4 @@ def plot_curve(control_points, points=50, show=True, color="blue"):
         plt.show()
 
 plot_curve([Vector2(0, 0), Vector2(0.3, 0.2), Vector2(0.7, 1.2), Vector2(1, 0.7)], show=False)
-plot_curve([Vector2(1, 0.7), Vector2(1.3, 0.3), Vector2(1.7, 0.1), Vector2(2, 0)], color="green")
+plot_curve([Vector2(1, 0.7), Vector2(1.3, 0.2), Vector2(1.7, -0.1), Vector2(2, 0)], color="green")

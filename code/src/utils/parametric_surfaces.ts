@@ -1,4 +1,4 @@
-import { BufferGeometry, Camera, Material, Mesh, Object3D, PerspectiveCamera, Points, PointsMaterial, Vector3, Vector4 } from "three";
+import { BufferGeometry, Camera, Material, Mesh, Object3D, PerspectiveCamera, Points, PointsMaterial, Vector2, Vector3, Vector4 } from "three";
 import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry";
 import { binomial } from "./binomial_coeff";
 import { Registerable, RegisterableComponents } from "./registerable";
@@ -346,4 +346,17 @@ class LODParametricBinder {
     }
 }
 
-export { ParametricSurface, BezierSurface, BSplineSurface, NURBSSurface, LODParametricBinder };
+const createCubicBezierCurve = (p_0: Vector2, p_1: Vector2, p_2: Vector2, p_3: Vector2): ((t: number) => number) => {
+    const a = p_0.y;
+    const b = p_1.y;
+    const c = p_2.y;
+    const d = p_3.y;
+
+    const tMax = Math.min(p_0.x, p_1.x, p_2.x, p_3.x)
+
+    return (t: number): number => {
+        return a * (1 - t) ** 3 + b * (3 * t * (1 - t) ** 2) + c * (3 * (1 - t) * t ** 2) + d * t ** 3;
+    }
+}
+
+export { ParametricSurface, BezierSurface, BSplineSurface, NURBSSurface, LODParametricBinder, createCubicBezierCurve };

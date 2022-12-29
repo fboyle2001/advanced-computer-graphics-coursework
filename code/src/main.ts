@@ -217,7 +217,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     carParkTreePlane.position.set(48, offset(), 15);
 
     const carParkTreeGroup = new THREE.Group();
-    const [tree, treeComponents] = await createBillboardTree(2);
+    const [tree, treeComponents, treeUpdate] = await createBillboardTree(2);
     carParkTreeGroup.add(tree)
     carParkTreeGroup.position.set(0, 0, 3)
 
@@ -359,6 +359,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         trampolineUpdate(clock.getElapsedTime())
         pondUpdate(clock.getElapsedTime());
         outsideFieldUpdate(clock.getElapsedTime());
+        treeUpdate(clock.getElapsedTime());
     };
 }
 
