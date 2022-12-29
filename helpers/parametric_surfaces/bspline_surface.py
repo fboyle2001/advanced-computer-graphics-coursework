@@ -49,13 +49,11 @@ def plot_surface(surface_points):
 
 if __name__ == "__main__":
     control_points = np.array([
-        [[2.0, 8.0, np.random.uniform(-3.3, 3.3)], [2.5, 7.8, np.random.uniform(-3.3, 3.3)], [3.0, 7.6, np.random.uniform(-3.3, 3.3)], [4.0, 7.4, np.random.uniform(-3.3, 3.3)], [5.2, 7.1, np.random.uniform(-3.3, 3.3)], [4.8, 6.9, np.random.uniform(-3.3, 3.3)]],
-        [[1.7, 7.0, np.random.uniform(-3.3, 3.3)], [2.3, 6.9, np.random.uniform(-3.3, 3.3)], [2.8, 6.8, np.random.uniform(-3.3, 3.3)], [3.7, 6.5, np.random.uniform(-3.3, 3.3)], [4.9, 6.2, np.random.uniform(-3.3, 3.3)], [4.5, 5.9, np.random.uniform(-3.3, 3.3)]],
-        [[1.3, 5.7, np.random.uniform(-3.3, 3.3)], [2.1, 5.7, np.random.uniform(-3.3, 3.3)], [2.6, 5.7, np.random.uniform(-3.3, 3.3)], [3.8, 5.6, np.random.uniform(-3.3, 3.3)], [4.6, 5.3, np.random.uniform(-3.3, 3.3)], [4.8, 5.4, np.random.uniform(-3.3, 3.3)]],
-        [[1.2, 5.0, np.random.uniform(-3.3, 3.3)], [1.8, 4.9, np.random.uniform(-3.3, 3.3)], [2.5, 4.9, np.random.uniform(-3.3, 3.3)], [3.7, 4.8, np.random.uniform(-3.3, 3.3)], [4.5, 4.6, np.random.uniform(-3.3, 3.3)], [4.7, 4.4, np.random.uniform(-3.3, 3.3)]],
-        [[0.8, 3.8, np.random.uniform(-3.3, 3.3)], [1.4, 3.9, np.random.uniform(-3.3, 3.3)], [2.2, 3.8, np.random.uniform(-3.3, 3.3)], [3.4, 3.3, np.random.uniform(-3.3, 3.3)], [4.3, 2.5, np.random.uniform(-3.3, 3.3)], [4.8, 2.1, np.random.uniform(-3.3, 3.3)]],
-        [[0.5, 3.0, np.random.uniform(-3.3, 3.3)], [1.2, 3.3, np.random.uniform(-3.3, 3.3)], [1.8, 3.4, np.random.uniform(-3.3, 3.3)], [3.0, 3.0, np.random.uniform(-3.3, 3.3)], [4.0, 1.5, np.random.uniform(-3.3, 3.3)], [4.8, 0.0, np.random.uniform(-3.3, 3.3)]],
+        [[x, 0, z] for z in range(0, 6)] for x in range(0, 6)
     ], np.float64)
+
+    print(control_points.shape)
+    print(control_points)
 
     U = [0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1]
     V = [0, 0, 0, 0, 0.33, 0.66, 1, 1, 1, 1]

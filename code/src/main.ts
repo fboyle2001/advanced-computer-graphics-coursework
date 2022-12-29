@@ -4,7 +4,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
-import { createBikeShed, createClassroom, createSportsHall, createTrampoline } from './utils/model_store';
+import { createBikeShed, createClassroom, createPond, createSportsHall, createTrampoline } from './utils/model_store';
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
 import { BezierSurface, LODParametricBinder, NURBSSurface } from './utils/parametric_surfaces';
 import { BoxGeometry, LOD, Material, Plane, PlaneGeometry, Vector3 } from 'three';
@@ -19,6 +19,7 @@ const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 const purpleMaterial = new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THREE.DoubleSide });
 const brownMaterial = new THREE.MeshBasicMaterial({ color: 0x9e9378, side: THREE.DoubleSide });
 const blueMaterial = new THREE.MeshBasicMaterial({ color: 0x268cab, side: THREE.DoubleSide });
+const redMaterial = new THREE.MeshBasicMaterial({ color: 0x910c00, side: THREE.DoubleSide });
 
 const composedRenderer = new EffectComposer(renderer);
 // const primaryRenderPass = new SSAARenderPass(scene, camera, 0xFFFFFF, 1);
@@ -130,6 +131,45 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         side: THREE.DoubleSide
     });
 
+    const classroomRoofRotatedMap = classroomRoofMap.clone()
+    classroomRoofRotatedMap.rotation = Math.PI / 2;
+
+    const classroomRoofRotatedMaterial = new THREE.MeshPhongMaterial({
+        map: classroomRoofRotatedMap,
+        side: THREE.DoubleSide
+    });
+
+    /** START OF OUTSIDE ROAD */
+
+    const outsideRoadPlane = new THREE.Mesh(new PlaneGeometry(200, 15), redMaterial);
+    outsideRoadPlane.rotation.x = -Math.PI / 2;
+    outsideRoadPlane.position.add(new Vector3(23, -offset(), -10));
+    scene.add(outsideRoadPlane);
+
+    const innerJunctionPlane = new THREE.Mesh(new PlaneGeometry(10, 2.5), blueMaterial);
+    innerJunctionPlane.rotation.x = -Math.PI / 2;
+    innerJunctionPlane.position.add(new Vector3(23, -offset(), -1.25));
+    scene.add(innerJunctionPlane);
+
+    const longPavement = new THREE.Mesh(new BoxGeometry(95, 0.6, 2.5), purpleMaterial);
+    longPavement.position.add(new Vector3(-29.5, 0.3 - offset(), -1.25));
+    scene.add(longPavement);
+
+    const reflectedLongPavement = longPavement.clone();
+    reflectedLongPavement.position.add(new Vector3(95 + 10, 0, 0));
+    scene.add(reflectedLongPavement);
+
+    const otherSideLongPavement = new THREE.Mesh(new BoxGeometry(200, 0.6, 2.5), purpleMaterial);
+    otherSideLongPavement.position.add(new Vector3(23, 0.3 - offset(), -1.25-15-2.5));
+    scene.add(otherSideLongPavement);
+
+    // const otherSideLongPavement = longPavement.clone()
+    // otherSideLongPavement.position.add(new Vector3(0, 0, -15 - 2.5));
+    // scene.add(otherSideLongPavement);
+    
+
+    /** END OF OUTSIDE ROAD */
+
     /** START OF BIKE SHEDS */ // 8 30
     const bikeShedPlane = new THREE.Mesh(new BoxGeometry(7.8, 0.6, 30), bikeShedPavementMaterial);
     bikeShedPlane.position.add(new Vector3(3.9, 0.3 - offset(), 15));
@@ -214,9 +254,11 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** START OF SPORTS HALL */
 
-    const sportsHallBuilding = await createSportsHall();
+    const [sportsHallBuilding, sportsHallComponents] = await createSportsHall(classroomRoofRotatedMaterial);
+    registeredComponents.addComponents(sportsHallComponents);
     sportsHallBuilding.rotation.set(0, Math.PI, 0)
     sportsHallBuilding.position.add(new Vector3(60, -offset(), 30));
+    // sportsHallBuilding.position.add(new Vector3(0, 5-offset(), 0));
     scene.add(sportsHallBuilding);
 
     // const trampolineBuildingPlane = new THREE.Mesh(new PlaneGeometry(26, 30), carParkMaterial);
@@ -232,6 +274,15 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** END OF SPORTS HALL */
 
+    /** START OF POND */
+
+    const [pond, pondComponents, pondUpdate] = createPond(gridMaterial);
+    pond.position.add(new Vector3(0, 5, 0))
+    registeredComponents.addComponents(pondComponents)
+    scene.add(pond);
+
+    /** END OF POND */
+
     // INITIAL UPDATES
     registeredComponents.setLODModelLevels([10, 20, 30]);
     registeredComponents.updateFixedSampleCounts(visualSettings.renderQuality.surfaceSamples);
@@ -244,6 +295,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         registeredComponents.updateParametricLODs(camera);
         registeredComponents.stepProgressiveMeshes();
         trampolineUpdate(clock.getElapsedTime())
+        pondUpdate(clock.getElapsedTime());
     };
 }
 

@@ -1,6 +1,6 @@
 import { BufferGeometry, DoubleSide, Group, Material, Mesh, MeshBasicMaterial, TextureLoader, Vector3, Vector4 } from "three";
 import { ModelLoader } from "./model_loader";
-import { BezierSurface, NURBSSurface } from "./parametric_surfaces";
+import { BezierSurface, BSplineSurface, NURBSSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
 
 import chairModelData from '../progressive_meshes/chair_50.json';
@@ -233,28 +233,28 @@ const createTrampoline = async (surfaceMaterial: Material): Promise<[Group, Regi
 
     const nsControlPoints = [
         [
-            new Vector4( 0, 0, 0, 1 ),
+            new Vector4( 0, 0, 0, 0.8 ),
             new Vector4( 0, 0, 2.5, 1 ),
             new Vector4( 0, 0, 5, 1 ),
-            new Vector4( 0, 0, 7.5, 1 )
+            new Vector4( 0, 0, 7.5, 0.8 )
         ],
         [
             new Vector4( 2.5, 0, 0, 1 ),
-            new Vector4( 1.875, 0, 1.875, 1 ),
-            new Vector4( 1.875, 0, 5.625, 1 ),
+            new Vector4( 1.875, 0, 1.875, 1.2 ),
+            new Vector4( 1.875, 0, 5.625, 1.2 ),
             new Vector4( 2.5, 0, 7.5, 1 )
         ],
         [
             new Vector4( 5, 0, 0, 1 ),
-            new Vector4( 5.625, 0, 1.875, 1 ),
-            new Vector4( 5.625, 0, 5.625, 1 ),
+            new Vector4( 5.625, 0, 1.875, 1.2 ),
+            new Vector4( 5.625, 0, 5.625, 1.2 ),
             new Vector4( 5, 0, 7.5, 1 )
         ],
         [
-            new Vector4( 7.5, 0, 0, 1 ),
+            new Vector4( 7.5, 0, 0, 0.8 ),
             new Vector4( 7.5, 0, 2.5, 1 ),
             new Vector4( 7.5, 0, 5, 1 ),
-            new Vector4( 7.5, 0, 7.5, 1 )
+            new Vector4( 7.5, 0, 7.5, 0.8 )
         ]
     ];
     
@@ -269,8 +269,8 @@ const createTrampoline = async (surfaceMaterial: Material): Promise<[Group, Regi
     bouncySurface.control_point_grid.position.set(0.25, 0.78, 0.25)
     group.add(bouncySurface.mesh);
     group.add(bouncySurface.control_point_grid);
-    const bounceFactor = 1.2;
-    const bounceDepth = 0.5;
+    const bounceFactor = 1.1;
+    const bounceDepth = 0.3;
 
     return [group, {
         fixedSurfaces: [bouncySurface]
@@ -282,11 +282,120 @@ const createTrampoline = async (surfaceMaterial: Material): Promise<[Group, Regi
     }];
 }
 
-const createSportsHall = async (): Promise<Group> => {
+const createSportsHall = async (roofMaterial: Material): Promise<[Group, RegisterableComponents]> => {
     await sportsHallCreator.loadAndBlock();
     const group = new Group();
     sportsHallCreator.addToScene(m => group.add(m));
-    return group;
+
+    const a = -1.2;
+    const b = -1;
+    const c = -0.6;
+
+    let roofControlPoints = [
+        [new Vector3(0, a, 0), new Vector3(3.528, b, 0), new Vector3(7.056, c, 0), new Vector3(10.584, c, 0), new Vector3(14.112, b, 0), new Vector3(17.64, a, 0)],
+        [new Vector3(0, b, 6), new Vector3(3.528, 0, 6), new Vector3(7.056, 0, 6), new Vector3(10.584, 0, 6), new Vector3(14.112, 0, 6), new Vector3(17.64, b, 6)],
+        [new Vector3(0, c, 12), new Vector3(3.528, 0, 12), new Vector3(7.056, 1, 12), new Vector3(10.584, 1, 12), new Vector3(14.112, 0, 12), new Vector3(17.64, c, 12)],
+        [new Vector3(0, c, 18), new Vector3(3.528, 0, 18), new Vector3(7.056, 1, 18), new Vector3(10.584, 1, 18), new Vector3(14.112, 0, 18), new Vector3(17.64, c, 18)],
+        [new Vector3(0, b, 24), new Vector3(3.528, 0, 24), new Vector3(7.056, 0, 24), new Vector3(10.584, 0, 24), new Vector3(14.112, 0, 24), new Vector3(17.64, b, 24)],
+        [new Vector3(0, a, 30), new Vector3(3.528, b, 30), new Vector3(7.056, c, 30), new Vector3(10.584, c, 30), new Vector3(14.112, b, 30), new Vector3(17.64, a, 30)]
+    ];
+
+    const p = 2;
+    const q = 2;
+    const U = [0, 0, 0, 0.167, 0.417, 0.667, 1, 1, 1]
+    const V = [0, 0, 0, 0.167, 0.417, 0.667, 1, 1, 1]
+    
+    // const U = [0, 0, 1e-6, 0.251, 0.667, , 1-(1e-6), 1, 1]
+    // const V = [0, 0, 1e-6, 0.251, 0.667, 1-(1e-6), , 1, 1]
+
+    const roof = new BSplineSurface(roofControlPoints, p, q, U, V, 40, roofMaterial);
+    roof.mesh.position.add(new Vector3(0, 8.97 - a, -30));
+    group.add(roof.mesh);
+    const cpGrid = roof.createControlPointGrid(0.2);
+    cpGrid.position.add(new Vector3(0, 8.97 - a, -30));
+    group.add(cpGrid);
+
+    return [group , {
+        lodSurfaces: [roof]
+    }];
 }
 
-export { createBikeShed, createBillboardTree, createClassroom, createTrampoline, createSportsHall };
+const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, (elapsed: number) => void] => {
+    const group = new Group();
+
+    const nsControlPoints = [
+        [
+            new Vector4( 0, 0, 0, 1 ),
+            new Vector4( 0, 0, 3, 1 ),
+            new Vector4( 0, 0, 6, 1 ),
+            new Vector4( 0, 0, 9, 1 ),
+            new Vector4( 0, 0, 12, 1 ),
+            new Vector4( 0, 0, 15, 1 )
+        ],
+        [
+            new Vector4( 3, 0, 0, 1 ),
+            new Vector4( 3, 0, 3, 2 ),
+            new Vector4( 3, 0, 6, 2 ),
+            new Vector4( 3, 0, 9, 2 ),
+            new Vector4( 3, 0, 12, 2 ),
+            new Vector4( 3, 0, 15, 1 )
+        ],
+        [
+            new Vector4( 6, 0, 0, 1 ),
+            new Vector4( 6, 0, 3, 2 ),
+            new Vector4( 6, 0, 6, 2 ),
+            new Vector4( 6, 0, 9, 2 ),
+            new Vector4( 6, 0, 12, 2 ),
+            new Vector4( 6, 0, 15, 1 )
+        ],
+        [
+            new Vector4( 9, 0, 0, 1 ),
+            new Vector4( 9, 0, 3, 2 ),
+            new Vector4( 9, 0, 6, 2 ),
+            new Vector4( 9, 0, 9, 2 ),
+            new Vector4( 9, 0, 12, 2 ),
+            new Vector4( 9, 0, 15, 1 )
+        ],
+        [
+            new Vector4( 12, 0, 0, 1 ),
+            new Vector4( 12, 0, 3, 2 ),
+            new Vector4( 12, 0, 6, 2 ),
+            new Vector4( 12, 0, 9, 2 ),
+            new Vector4( 12, 0, 12, 2 ),
+            new Vector4( 12, 0, 15, 1 )
+        ],
+        [
+            new Vector4( 15, 0, 0, 1 ),
+            new Vector4( 15, 0, 3, 1 ),
+            new Vector4( 15, 0, 6, 1 ),
+            new Vector4( 15, 0, 9, 1 ),
+            new Vector4( 15, 0, 12, 1 ),
+            new Vector4( 15, 0, 15, 1 )
+        ]
+    ];
+
+    const p = 2;
+    const U = [0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1]
+    const q = 3;
+    const V = [0, 0, 0, 0, 0.33, 0.66, 1, 1, 1, 1]
+
+    const samples = 40;
+
+    const pondSurface = new NURBSSurface(nsControlPoints, p, q, U, V, samples, surfaceMaterial, 0.5);
+    group.add(pondSurface.mesh);
+    group.add(pondSurface.control_point_grid);
+
+    return [group, {
+        fixedSurfaces: [pondSurface]
+    }, (elapsed) => {
+        [...Array(6).keys()].forEach(i => {
+            [...Array(6).keys()].forEach(j => {
+                const oldPoint = pondSurface.control_points[i][j];
+                console.log({oldPoint})
+                pondSurface.updateControlPoint(i, j, new Vector3(oldPoint.x, Math.cos(elapsed * i / 6 * Math.PI), oldPoint.z))
+            })
+        })
+    }];
+}
+
+export { createBikeShed, createBillboardTree, createClassroom, createTrampoline, createSportsHall, createPond };

@@ -178,10 +178,11 @@ class NURBSSurface extends ParametricSurface {
     v_basis: ((v: number) => number)[];
     mesh: Mesh;
     samples: number;
+    control_point_size: number;
     stored_computation!: NURBSIntermediateComputation[][];
     control_point_grid!: Points;
 
-    constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[], samples: number, material: Material) {
+    constructor(control_points: Vector4[][], p: number, q: number, U: number[], V: number[], samples: number, material: Material, control_point_size?: number) {
         super();
 
         this.control_points = control_points;
@@ -192,6 +193,7 @@ class NURBSSurface extends ParametricSurface {
         this.samples = samples;
         this._resetStored();
         this.mesh = new Mesh(this._createGeometry(this.samples), material);
+        this.control_point_size = control_point_size ?? 0.2;
         this._generateControlPointGrid();
     }
 
@@ -203,7 +205,7 @@ class NURBSSurface extends ParametricSurface {
             this.control_point_grid.geometry.dispose();
             this.control_point_grid.geometry = pointsGeom;
         } else{
-            const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xAA00AA, size: 0.2 }));
+            const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xAA00AA, size: this.control_point_size }));
             this.control_point_grid = pointsMesh;
         }
     }
