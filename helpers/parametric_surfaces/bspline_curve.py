@@ -40,4 +40,4 @@ def plot_curve(control_points, points=50):
     plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
 
-plot_curve([Vector2(-4, -4), Vector2(-2, 4), Vector2(2, -4), Vector2(4, 4)])#, Vector2(4, 2), Vector2(3, 4), Vector2(5, 3)])
+plot_curve([Vector2(0, 0), Vector2(0.3, 1.1), Vector2(0.7, 0.6), Vector2(1, 0)])#, Vector2(4, 2), Vector2(3, 4), Vector2(5, 3)])

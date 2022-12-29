@@ -24,7 +24,7 @@ def create_bezier_curve(ps: List[Vector2]):
         case _:
             assert 1==0, "Invalid number of points"
 
-def plot_curve(control_points, points=50):
+def plot_curve(control_points, points=50, show=True, color="blue"):
     B = create_bezier_curve(control_points)
     assert B is not None
     ts = np.linspace(0, 1, points)
@@ -37,7 +37,7 @@ def plot_curve(control_points, points=50):
         xs.append(point.x)
         ys.append(point.y)
 
-    plt.scatter(xs, ys, color="blue")
+    plt.scatter(xs, ys, color=color)
 
     bxs = []
     bys = []
@@ -48,6 +48,8 @@ def plot_curve(control_points, points=50):
 
     plt.scatter(bxs, bys, color="red")
     plt.gca().set_aspect('equal', adjustable='box')
-    plt.show()
+    if show:
+        plt.show()
 
-plot_curve([Vector2(1, 0), Vector2(3, 3), Vector2(6, 3), Vector2(8, 1)])
+plot_curve([Vector2(0, 0), Vector2(0.3, 0.2), Vector2(0.7, 1.2), Vector2(1, 0.7)], show=False)
+plot_curve([Vector2(1, 0.7), Vector2(1.3, 0.3), Vector2(1.7, 0.1), Vector2(2, 0)], color="green")
