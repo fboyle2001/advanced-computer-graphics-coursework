@@ -212,19 +212,28 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
             model.position.set(16, offset() + 4e-2, 3 + i * 4.2);
         });
     }
+
+    const carParkPavement = new THREE.Mesh(new BoxGeometry(26.25, 4.0, 2.5), blueMaterial);
+    carParkPavement.position.add(new Vector3(13.125, -1.4 - offset(), 31.25));
+    scene.add(carParkPavement);
+
     /** END OF CAR PARK */
 
     /** START OF ENTRANCE */
 
-    const entrancePlane = new THREE.Mesh(new PlaneGeometry(8, 30), purpleMaterial);
+    const entrancePlane = new THREE.Mesh(new PlaneGeometry(5.5, 30), purpleMaterial);
     entrancePlane.rotation.x = -Math.PI / 2;
-    entrancePlane.position.set(30, -offset(), 45);
+    entrancePlane.position.set(31.25, -offset(), 45);
     scene.add(entrancePlane);
 
     const treeEntrancePlane = new THREE.Mesh(new PlaneGeometry(8.36, 30), blueMaterial);
     treeEntrancePlane.rotation.x = -Math.PI / 2;
     treeEntrancePlane.position.set(38.18, -offset(), 45);
     scene.add(treeEntrancePlane);
+
+    const entrancePavement = new THREE.Mesh(new BoxGeometry(2.5, 4.0, 30), redMaterial);
+    entrancePavement.position.add(new Vector3(27.5,-1.4 - offset(), 45));
+    scene.add(entrancePavement);
 
     /** END OF ENTRANCE */
 
@@ -277,9 +286,13 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     /** START OF POND */
 
     const [pond, pondComponents, pondUpdate] = createPond(gridMaterial);
-    pond.position.add(new Vector3(0, 5, 0))
+    pond.position.add(new Vector3(0, -0.4 + offset(), 32.5))
     registeredComponents.addComponents(pondComponents)
     scene.add(pond);
+
+    const pondPavement = new THREE.Mesh(new BoxGeometry(26.25, 4.0, 2.5), purpleMaterial);
+    pondPavement.position.add(new Vector3(13.125, -1.4 - offset(), 60 - 1.25));
+    scene.add(pondPavement); 
 
     /** END OF POND */
 

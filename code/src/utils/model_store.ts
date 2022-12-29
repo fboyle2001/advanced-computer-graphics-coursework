@@ -326,51 +326,51 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
     const nsControlPoints = [
         [
             new Vector4( 0, 0, 0, 1 ),
-            new Vector4( 0, 0, 3, 1 ),
-            new Vector4( 0, 0, 6, 1 ),
-            new Vector4( 0, 0, 9, 1 ),
-            new Vector4( 0, 0, 12, 1 ),
-            new Vector4( 0, 0, 15, 1 )
+            new Vector4( 0, 0, 5, 1 ),
+            new Vector4( 0, 0, 10, 1 ),
+            new Vector4( 0, 0, 15, 1 ),
+            new Vector4( 0, 0, 20, 1 ),
+            new Vector4( 0, 0, 25, 1 )
         ],
         [
-            new Vector4( 3, 0, 0, 1 ),
-            new Vector4( 3, 0, 3, 2 ),
-            new Vector4( 3, 0, 6, 2 ),
-            new Vector4( 3, 0, 9, 2 ),
-            new Vector4( 3, 0, 12, 2 ),
-            new Vector4( 3, 0, 15, 1 )
+            new Vector4( 1 * 26.25 / 5, 0, 0, 1 ),
+            new Vector4( 1 * 26.25 / 5, 0, 5, 2 ),
+            new Vector4( 1 * 26.25 / 5, 0, 10, 2 ),
+            new Vector4( 1 * 26.25 / 5, 0, 15, 2 ),
+            new Vector4( 1 * 26.25 / 5, 0, 20, 2 ),
+            new Vector4( 1 * 26.25 / 5, 0, 25, 1 )
         ],
         [
-            new Vector4( 6, 0, 0, 1 ),
-            new Vector4( 6, 0, 3, 2 ),
-            new Vector4( 6, 0, 6, 2 ),
-            new Vector4( 6, 0, 9, 2 ),
-            new Vector4( 6, 0, 12, 2 ),
-            new Vector4( 6, 0, 15, 1 )
+            new Vector4( 2 * 26.25 / 5, 0, 0, 1 ),
+            new Vector4( 2 * 26.25 / 5, 0, 5, 2 ),
+            new Vector4( 2 * 26.25 / 5, 0, 10, 2 ),
+            new Vector4( 2 * 26.25 / 5, 0, 15, 2 ),
+            new Vector4( 2 * 26.25 / 5, 0, 20, 2 ),
+            new Vector4( 2 * 26.25 / 5, 0, 25, 1 )
         ],
         [
-            new Vector4( 9, 0, 0, 1 ),
-            new Vector4( 9, 0, 3, 2 ),
-            new Vector4( 9, 0, 6, 2 ),
-            new Vector4( 9, 0, 9, 2 ),
-            new Vector4( 9, 0, 12, 2 ),
-            new Vector4( 9, 0, 15, 1 )
+            new Vector4( 3 * 26.25 / 5, 0, 0, 1 ),
+            new Vector4( 3 * 26.25 / 5, 0, 5, 2 ),
+            new Vector4( 3 * 26.25 / 5, 0, 10, 2 ),
+            new Vector4( 3 * 26.25 / 5, 0, 15, 2 ),
+            new Vector4( 3 * 26.25 / 5, 0, 20, 2 ),
+            new Vector4( 3 * 26.25 / 5, 0, 25, 1 )
         ],
         [
-            new Vector4( 12, 0, 0, 1 ),
-            new Vector4( 12, 0, 3, 2 ),
-            new Vector4( 12, 0, 6, 2 ),
-            new Vector4( 12, 0, 9, 2 ),
-            new Vector4( 12, 0, 12, 2 ),
-            new Vector4( 12, 0, 15, 1 )
+            new Vector4( 4 * 26.25 / 5, 0, 0, 1 ),
+            new Vector4( 4 * 26.25 / 5, 0, 5, 2 ),
+            new Vector4( 4 * 26.25 / 5, 0, 10, 2 ),
+            new Vector4( 4 * 26.25 / 5, 0, 15, 2 ),
+            new Vector4( 4 * 26.25 / 5, 0, 20, 2 ),
+            new Vector4( 4 * 26.25 / 5, 0, 25, 1 )
         ],
         [
-            new Vector4( 15, 0, 0, 1 ),
-            new Vector4( 15, 0, 3, 1 ),
-            new Vector4( 15, 0, 6, 1 ),
-            new Vector4( 15, 0, 9, 1 ),
-            new Vector4( 15, 0, 12, 1 ),
-            new Vector4( 15, 0, 15, 1 )
+            new Vector4( 26.25, 0, 0, 1 ),
+            new Vector4( 26.25, 0, 5, 1 ),
+            new Vector4( 26.25, 0, 10, 1 ),
+            new Vector4( 26.25, 0, 15, 1 ),
+            new Vector4( 26.25, 0, 20, 1 ),
+            new Vector4( 26.25, 0, 25, 1 )
         ]
     ];
 
