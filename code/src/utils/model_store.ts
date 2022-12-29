@@ -1,4 +1,4 @@
-import { BufferGeometry, DoubleSide, Group, Material, Mesh, MeshBasicMaterial, TextureLoader, Vector3, Vector4 } from "three";
+import { BufferGeometry, DoubleSide, Group, LOD, Material, Mesh, MeshBasicMaterial, MeshPhongMaterial, PlaneGeometry, TextureLoader, Vector3, Vector4 } from "three";
 import { ModelLoader } from "./model_loader";
 import { BezierSurface, BSplineSurface, NURBSSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
@@ -6,6 +6,7 @@ import { ProgressiveMesh } from "./progressive_mesh";
 import chairModelData from '../progressive_meshes/chair_50.json';
 import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
+import { SkeletalModel } from "./skeletal_model";
 
 const initialLODs = {
     low: 30,
@@ -19,6 +20,7 @@ const classroomCreator = new ModelLoader(null, `models/custom/classroom/roofless
 const trampolineEdgeCreator = new ModelLoader(null, `models/custom/trampoline/model.gltf`);
 const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/model_pack.gltf`);
 const corridorCreator = new ModelLoader(null, `models/custom/corridor/model.gltf`);
+let riggedTree: SkeletalModel | null = null;
 
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): [Group, RegisterableComponents] => {
     const group = new Group();
@@ -89,9 +91,9 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     }];
 }
 
-const createBillboardTree = (faces: number): Group => {
+const createBillboardTree = async (faces: number): Promise<[Group, RegisterableComponents]> => {
     const billboardTexture = new TextureLoader().load("/textures/tree_billboard.png");
-    const billboardMaterial = new MeshBasicMaterial({
+    const billboardMaterial = new MeshPhongMaterial({
         map: billboardTexture,
         transparent: true,
         depthTest: false,
@@ -102,22 +104,31 @@ const createBillboardTree = (faces: number): Group => {
     const group = new Group();
 
     for(let i = 0; i < faces; i++) {
-        const otherFace = new BezierSurface(
-            [
-                [new Vector3(0, 0, 0), new Vector3(0, 9, 0), new Vector3(0, 9, 0)],
-                [new Vector3(0, 0, 8), new Vector3(0, 9, 8), new Vector3(0, 9, 8)]
-            ],
-            2,
-            billboardMaterial
-        ).mesh;
-        otherFace.position.sub(new Vector3(0, 0, 4));
-        otherFace.position.applyAxisAngle(new Vector3(0, 1, 0), i * Math.PI / faces)
-        otherFace.position.add(new Vector3(0, 0, 4));
-        otherFace.rotateOnAxis(new Vector3(0, 1, 0), i * Math.PI / faces)
+        const otherFace = new Mesh(new PlaneGeometry(4, 4 * 417/216), billboardMaterial);
+        otherFace.rotateY(i * Math.PI / faces)
         group.add(otherFace);
     }
 
-    return group
+    if(!riggedTree) {
+        riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/r/rigged.glb")
+    }
+
+    const skinnedTree = new Group();
+    skinnedTree.add(riggedTree.skinned_mesh);
+    skinnedTree.add(riggedTree.model);
+    skinnedTree.add(riggedTree.skeleton_helper);
+
+    const lod = new LOD();
+    lod.addLevel(group, 30);
+    // lod.addLevel(group, 20);
+    lod.addLevel(skinnedTree, 10);
+
+    const retGroup = new Group();
+    retGroup.add(lod);
+    
+    return [retGroup, {
+        lods: [lod]
+    }]
 }
 
 const createClassroom = async (chairMaterial: Material, roofMaterial: Material): Promise<[Group, RegisterableComponents]> => {

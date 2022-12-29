@@ -4,7 +4,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
-import { createBikeShed, createClassroom, createCorridor, createPond, createSportsHall, createTrampoline } from './utils/model_store';
+import { createBikeShed, createBillboardTree, createClassroom, createCorridor, createPond, createSportsHall, createTrampoline } from './utils/model_store';
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
 import { BezierSurface, LODParametricBinder, NURBSSurface } from './utils/parametric_surfaces';
 import { BoxGeometry, LOD, Material, Plane, PlaneGeometry, Vector3 } from 'three';
@@ -214,8 +214,13 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     const carParkTreePlane = new THREE.Mesh(new PlaneGeometry(20, 30), greenMaterial);
     carParkTreePlane.rotation.x = -Math.PI / 2;
-    carParkTreePlane.position.set(48, offset(), 15)
+    carParkTreePlane.position.set(48, offset(), 15);
     scene.add(carParkTreePlane)
+
+    const [tree, treeComponents] = await createBillboardTree(4);
+    tree.position.set(0, 5, 0);
+    scene.add(tree);
+
 
     const longCarParkTreePlane = new THREE.Mesh(new PlaneGeometry(20, 240), greenMaterial);
     longCarParkTreePlane.rotation.x = -Math.PI / 2;

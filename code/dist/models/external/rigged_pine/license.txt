@@ -1,0 +1,11 @@
+Model Information:
+* title:	Rigged Pine Tree001
+* source:	https://sketchfab.com/3d-models/rigged-pine-tree001-eec38303069a431597dc12a9a9975fd3
+* author:	fafi622 (https://sketchfab.com/fafi622)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Rigged Pine Tree001" (https://sketchfab.com/3d-models/rigged-pine-tree001-eec38303069a431597dc12a9a9975fd3) by fafi622 (https://sketchfab.com/fafi622) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

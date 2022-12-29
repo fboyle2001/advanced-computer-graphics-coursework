@@ -30,6 +30,7 @@ class SkeletalModel {
 
     public static async createSkeletalModel(file_location: string): Promise<SkeletalModel> {
         const gltf = await new GLTFLoader().loadAsync(file_location);
+        console.log(gltf)
         const model = gltf.scene;
 
         let skinned_mesh: SkinnedMesh | null = null;
