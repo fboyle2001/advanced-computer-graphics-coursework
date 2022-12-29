@@ -392,7 +392,9 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
             [...Array(6).keys()].forEach(j => {
                 const oldPoint = pondSurface.control_points[i][j];
                 console.log({oldPoint})
-                pondSurface.updateControlPoint(i, j, new Vector3(oldPoint.x, Math.cos(elapsed * i / 6 * Math.PI), oldPoint.z))
+                pondSurface.updateControlPoint(i, j, 
+                    new Vector3(oldPoint.x, (Math.sin(elapsed * (i ** 2 + j ** 2) / 50 + Math.PI / 2) + Math.sin(elapsed * ((5 - i) ** 2 + (5 - j) ** 2) / 50)) / 2, oldPoint.z)
+                )
             })
         })
     }];
