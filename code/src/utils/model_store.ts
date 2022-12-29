@@ -18,6 +18,7 @@ const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 const classroomCreator = new ModelLoader(null, `models/custom/classroom/roofless/model.gltf`);
 const trampolineEdgeCreator = new ModelLoader(null, `models/custom/trampoline/model.gltf`);
 const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/model_pack.gltf`);
+const corridorCreator = new ModelLoader(null, `models/custom/corridor/model.gltf`);
 
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): [Group, RegisterableComponents] => {
     const group = new Group();
@@ -127,6 +128,7 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material):
         modelName: "model_pack.gltf"
     });
 
+
     tableLOD.rotation.y = Math.PI;
     tableLOD.position.set(3, 0, 4);
     
@@ -137,7 +139,10 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material):
         chairModelData.maximums.polygons, 
         chairModelData.reduction
     );
-    await classroomCreator.loadAndBlock();
+
+    if(!classroomCreator.loaded) {
+        await classroomCreator.loadAndBlock();
+    }
 
     const tableWithChairs = new Group();
 
@@ -391,7 +396,6 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
         [...Array(6).keys()].forEach(i => {
             [...Array(6).keys()].forEach(j => {
                 const oldPoint = pondSurface.control_points[i][j];
-                console.log({oldPoint})
                 pondSurface.updateControlPoint(i, j, 
                     new Vector3(oldPoint.x, (Math.sin(elapsed * (i ** 2 + j ** 2) / 50 + Math.PI / 2) + Math.sin(elapsed * ((5 - i) ** 2 + (5 - j) ** 2) / 50)) / 2, oldPoint.z)
                 )
@@ -400,4 +404,13 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
     }];
 }
 
-export { createBikeShed, createBillboardTree, createClassroom, createTrampoline, createSportsHall, createPond };
+const createCorridor = async (roofMaterial: Material): Promise<Group> => {
+    await corridorCreator.loadAndBlock()
+
+    const group = new Group();
+    corridorCreator.addToScene(m => group.add(m));
+
+    return group;
+}
+
+export { createBikeShed, createBillboardTree, createClassroom, createTrampoline, createSportsHall, createPond, createCorridor };

@@ -66,7 +66,9 @@ class ModelLoader {
     }
 
     async loadAndBlock(): Promise<THREE.Group> {
+        console.log("lb")
         if(this.loaded) {
+            console.log("already")
             return new Promise<THREE.Group>(() => this.object);
         }
 

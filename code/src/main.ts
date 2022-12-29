@@ -4,7 +4,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
-import { createBikeShed, createClassroom, createPond, createSportsHall, createTrampoline } from './utils/model_store';
+import { createBikeShed, createClassroom, createCorridor, createPond, createSportsHall, createTrampoline } from './utils/model_store';
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
 import { BezierSurface, LODParametricBinder, NURBSSurface } from './utils/parametric_surfaces';
 import { BoxGeometry, LOD, Material, Plane, PlaneGeometry, Vector3 } from 'three';
@@ -20,6 +20,7 @@ const purpleMaterial = new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THRE
 const brownMaterial = new THREE.MeshBasicMaterial({ color: 0x9e9378, side: THREE.DoubleSide });
 const blueMaterial = new THREE.MeshBasicMaterial({ color: 0x268cab, side: THREE.DoubleSide });
 const redMaterial = new THREE.MeshBasicMaterial({ color: 0x910c00, side: THREE.DoubleSide });
+const greenMaterial = new THREE.MeshBasicMaterial({ color: 0x239140, side: THREE.DoubleSide });
 
 const composedRenderer = new EffectComposer(renderer);
 // const primaryRenderPass = new SSAARenderPass(scene, camera, 0xFFFFFF, 1);
@@ -161,12 +162,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     const otherSideLongPavement = new THREE.Mesh(new BoxGeometry(200, 0.6, 2.5), purpleMaterial);
     otherSideLongPavement.position.add(new Vector3(23, 0.3 - offset(), -1.25-15-2.5));
-    scene.add(otherSideLongPavement);
-
-    // const otherSideLongPavement = longPavement.clone()
-    // otherSideLongPavement.position.add(new Vector3(0, 0, -15 - 2.5));
-    // scene.add(otherSideLongPavement);
-    
+    scene.add(otherSideLongPavement);    
 
     /** END OF OUTSIDE ROAD */
 
@@ -176,7 +172,6 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     scene.add(bikeShedPlane);
 
     const bikeShedBarrier = new THREE.Mesh(new BoxGeometry(0.2, 0.6, 30), brownMaterial);
-    // bikeShedPlane.rotation.x = -Math.PI / 2;
     bikeShedBarrier.position.add(new Vector3(7.9, 0.3 - offset(), 15));
     scene.add(bikeShedBarrier);
 
@@ -217,6 +212,16 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     carParkPavement.position.add(new Vector3(13.125, -1.4 - offset(), 31.25));
     scene.add(carParkPavement);
 
+    const carParkTreePlane = new THREE.Mesh(new PlaneGeometry(20, 30), greenMaterial);
+    carParkTreePlane.rotation.x = -Math.PI / 2;
+    carParkTreePlane.position.set(48, offset(), 15)
+    scene.add(carParkTreePlane)
+
+    const longCarParkTreePlane = new THREE.Mesh(new PlaneGeometry(20, 240), greenMaterial);
+    longCarParkTreePlane.rotation.x = -Math.PI / 2;
+    longCarParkTreePlane.position.set(-10, offset(), 120)
+    scene.add(longCarParkTreePlane)
+
     /** END OF CAR PARK */
 
     /** START OF ENTRANCE */
@@ -248,16 +253,36 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** START OF CLASSROOMS */
 
-    const [classroomOne, classroomComponents] = await createClassroom(blueMaterial, classroomRoofMaterial);
-    registeredComponents.addComponents(classroomComponents);
+    const [classroomOne, classroomOneComponents] = await createClassroom(blueMaterial, classroomRoofMaterial);
+    registeredComponents.addComponents(classroomOneComponents);
     classroomOne.scale.set(3, 3, 3);
     classroomOne.rotation.set(0, Math.PI, 0);
-    classroomOne.position.set(60 + offset(), -0.1 + offset(), 100);
+    classroomOne.position.set(60 - offset(), -0.1 + offset(), 100 - offset());
     scene.add(classroomOne);
-    
-    const classroomTwo = classroomOne.clone();
-    classroomTwo.position.set(45 + offset(), -0.1 + offset(), 100)
+
+    const [classroomTwo, classroomTwoComponents] = await createClassroom(blueMaterial, classroomRoofMaterial);
+    registeredComponents.addComponents(classroomTwoComponents);
+    classroomTwo.scale.set(3, 3, 3);
+    classroomTwo.rotation.set(0, Math.PI, 0);
+    classroomTwo.position.set(45 - offset(), -0.1 + offset(), 100 - offset())
     scene.add(classroomTwo);
+
+    const corridor = await createCorridor(classroomRoofMaterial);
+    corridor.rotation.set(0, -Math.PI / 2, 0);
+    corridor.position.set(20 + offset(), -0.1 + offset(), 100 - offset());
+    scene.add(corridor);
+    
+    const [classroomThree, classroomThreeComponents] = await createClassroom(blueMaterial, classroomRoofMaterial);
+    registeredComponents.addComponents(classroomThreeComponents);
+    classroomThree.scale.set(3, 3, 3);
+    classroomThree.position.set(45 + offset(), -0.1 + offset(), 170 + offset());
+    scene.add(classroomThree);
+
+    const [classroomFour, classroomFourComponents] = await createClassroom(blueMaterial, classroomRoofMaterial);
+    registeredComponents.addComponents(classroomFourComponents);
+    classroomFour.scale.set(3, 3, 3);
+    classroomFour.position.set(30 + offset(), -0.1 + offset(), 170 + offset());
+    scene.add(classroomFour);
 
     /** END OF CLASSROOMS */
 
