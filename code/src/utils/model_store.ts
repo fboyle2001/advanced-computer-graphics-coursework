@@ -16,9 +16,9 @@ const initialLODs = {
 
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
-const classroomCreator = new ModelLoader(null, `models/custom/classroom/roofless/model.gltf`);
+const classroomCreator = new ModelLoader(null, `models/custom/classroom/roofless/packed.gltf`);
 const trampolineEdgeCreator = new ModelLoader(null, `models/custom/trampoline/model.gltf`);
-const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/model.gltf`);
+const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/packed.gltf`);
 const corridorCreator = new ModelLoader(null, `models/custom/corridor/model.gltf`);
 
 let tableLOD: LOD | null = null;
