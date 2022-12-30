@@ -11,7 +11,6 @@ const defaultVisualSettings = {
     antialiasing: "disabled",
     renderDistance: "1000",
     fixedSurfaceSamples: 24,
-    materialQuality: "highest",
     animationQuality: "low",
     debugMode: false,
     levelsOfDetail: {
@@ -92,9 +91,6 @@ const updateSettings = (
         }
     }
 
-    // TODO: Material Quality
-    const materialQuality = (document.getElementById("material_quality") as HTMLInputElement)!.value;
-
     // Animation Quality
     const animationQuality = (document.getElementById("animation_quality") as HTMLInputElement)!.value;
     componentRegister.setAnimationQuality(animationQuality);
@@ -118,13 +114,7 @@ const setupVisualQualityEvents = (
     document.getElementById("save_settings")?.addEventListener("click", (event) => {
         console.log("Saving settings")
         updateSettings(componentRegister, camera, composedRenderer, scene);
-        // componentRegister.lodSurfaceBinder.boundSurfaces.forEach(surface => surface.co)
     });
-
-    // document.getElementById("render_distance")?.addEventListener("change", (event) => {
-    //     const target = event.target as HTMLInputElement;
-    //     console.log(`Render Distance value is ${target.value}`)
-    // })
 }
 
 const setVisualQualityDefaults = (
@@ -143,7 +133,6 @@ const setVisualQualityDefaults = (
 
     (document.getElementById("render_distance") as HTMLInputElement)!.value = defaultVisualSettings.renderDistance;
     (document.getElementById("aa_type") as HTMLInputElement)!.value = defaultVisualSettings.antialiasing;
-    (document.getElementById("material_quality") as HTMLInputElement)!.value = defaultVisualSettings.materialQuality;
     (document.getElementById("animation_quality") as HTMLInputElement)!.value = defaultVisualSettings.animationQuality;
     (document.getElementById("fixed_samples") as HTMLInputElement)!.value = "" + defaultVisualSettings.fixedSurfaceSamples;
 

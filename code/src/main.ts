@@ -61,7 +61,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     gridMap.wrapS = gridMap.wrapT = THREE.RepeatWrapping;
     gridMap.anisotropy = 16;
 
-    const gridMaterial = new THREE.MeshPhongMaterial({
+    const gridMaterial = new THREE.MeshStandardMaterial({
         map: gridMap,
         side: THREE.DoubleSide
     });
@@ -70,7 +70,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     woodenPanelMap.wrapS = woodenPanelMap.wrapT = THREE.RepeatWrapping;
     woodenPanelMap.anisotropy = 16;
 
-    const woodenPanelMaterial = new THREE.MeshPhongMaterial({
+    const woodenPanelMaterial = new THREE.MeshStandardMaterial({
         map: woodenPanelMap,
         side: THREE.DoubleSide
     });
@@ -79,7 +79,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     carParkMap.wrapS = carParkMap.wrapT = THREE.RepeatWrapping;
     carParkMap.anisotropy = 16;
 
-    const carParkMaterial = new THREE.MeshPhongMaterial({
+    const carParkMaterial = new THREE.MeshStandardMaterial({
         map: carParkMap,
         side: THREE.DoubleSide
     });
@@ -89,7 +89,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     bikeShedPavementMap.repeat.set(1, 2)
     bikeShedPavementMap.anisotropy = 16;
 
-    const bikeShedPavementMaterial = new THREE.MeshPhongMaterial({
+    const bikeShedPavementMaterial = new THREE.MeshStandardMaterial({
         map: bikeShedPavementMap,
         side: THREE.DoubleSide
     });
@@ -99,7 +99,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     classroomRoofMap.repeat.set(1, 8)
     classroomRoofMap.anisotropy = 16;
 
-    const classroomRoofMaterial = new THREE.MeshPhongMaterial({
+    const classroomRoofMaterial = new THREE.MeshStandardMaterial({
         map: classroomRoofMap,
         side: THREE.DoubleSide
     });
@@ -107,7 +107,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const classroomRoofRotatedMap = classroomRoofMap.clone()
     classroomRoofRotatedMap.rotation = Math.PI / 2;
 
-    const classroomRoofRotatedMaterial = new THREE.MeshPhongMaterial({
+    const classroomRoofRotatedMaterial = new THREE.MeshStandardMaterial({
         map: classroomRoofRotatedMap,
         side: THREE.DoubleSide
     });
@@ -115,7 +115,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const treeBillboardTexture = new THREE.TextureLoader().load("/textures/tree_billboard.png");
     treeBillboardTexture.encoding =THREE.sRGBEncoding;
 
-    const treeBillboardMaterial = new THREE.MeshBasicMaterial({
+    const treeBillboardMaterial = new THREE.MeshPhongMaterial({
         map: treeBillboardTexture,
         transparent: true,
         depthTest: true,

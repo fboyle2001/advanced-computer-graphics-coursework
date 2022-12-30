@@ -103,20 +103,22 @@
                 </div>
                 <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem;">
                     <h2 style="font-weight: 600; font-size: x-large;">Render Quality</h2>
-                    <div style="display: flex; flex-direction: row;">
-                        <h3>Render Distance</h3>
+                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
+                        <h3 style="margin-right: 0.4rem;">Render Distance</h3>
                         <select
                             id="render_distance"
+                            style="padding: 0.1rem;"
                         >
                             <option value="20">Low (20 units)</option>
                             <option value="200">Medium (200 units)</option>
                             <option value="1000">High (1000 units)</option>
                         </select>
                     </div>
-                    <div style="display: flex; flex-direction: row;">
-                        <h3>Anti-Aliasing</h3>
+                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
+                        <h3 style="margin-right: 0.4rem;">Anti-Aliasing</h3>
                         <select
                             id="aa_type"
+                            style="padding: 0.1rem;"
                         >
                             <option value="disabled">Disabled</option>
                             <option value="fxaa">FXAA</option>
@@ -124,136 +126,102 @@
                             <option value="smaa">SMAA</option>
                         </select>
                     </div>
-                    <div style="display: flex; flex-direction: row;">
-                        <h3>Material Quality</h3>
-                        <select
-                            disabled="disabled"
-                            id="material_quality"
-                        >
-                            <option value="highest">Highest (MeshStandardMaterial)</option>
-                            <option value="high">High (MeshPhongMaterial)</option>
-                            <option value="medium">Medium (MeshLambertMaterial)</option>
-                            <option value="lowest">Lowest (MeshBasicMaterial)</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; flex-direction: row;">
-                        <h3>Animation Quality</h3>
+                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
+                        <h3 style="margin-right: 0.4rem;">Animation Quality</h3>
                         <select
                             id="animation_quality"
+                            style="padding: 0.1rem;"
                         >
                             <option value="high">High</option>
                             <option value="medium">Medium</option>
                             <option value="low">Low (Update every 8 frames)</option>
                         </select>
                     </div>
-                    <div style="display: flex; flex-direction: row;">
-                        <h3>Non-LOD Parametric Surface Samples</h3>
+                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
+                        <h3 style="margin-right: 0.4rem;">Non-LOD Parametric Surface Samples</h3>
                         <input 
                             type="number"
                             id="fixed_samples"
                             value="0"
+                            style="padding: 0.1rem;"
                         />
                     </div>
-                    <div style="display: flex; flex-direction: row;">
-                        <h3>Enable Debug Mode</h3>
+                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
+                        <h3 style="margin-right: 0.4rem;">Enable Debug Mode</h3>
                         <input 
                             type="checkbox"
                             id="debug_mode"
+                            style="height: 1.2rem; width: 1.2rem;"
                         />
                     </div>
-                    <h3>Level of Detail</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Setting</th>
-                                <th>Low Quality</th>
-                                <th>Medium Quality</th>
-                                <th>High Quality</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Trigger Distance</td>
-                                <td>
-                                    <input 
-                                        type="number"
-                                        id="lod_low_distance"
-                                        value="0"
-                                    />
-                                </td>
-                                <td>
-                                    <input 
-                                        type="number"
-                                        id="lod_medium_distance"
-                                        value="0"
-                                    />
-                                </td>
-                                <td>
-                                    <input 
-                                        type="number"
-                                        id="lod_high_distance"
-                                        value="0"
-                                    />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Surface Samples</td>
-                                <td>
-                                    <input 
-                                        type="number"
-                                        id="lod_low_surface_samples"
-                                        value="0"
-                                    />
-                                </td>
-                                <td>
-                                    <input 
-                                        type="number"
-                                        id="lod_medium_surface_samples"
-                                        value="0"
-                                    />
-                                </td>
-                                <td>
-                                    <input 
-                                        type="number"
-                                        id="lod_high_surface_samples"
-                                        value="0"
-                                    />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Frames per Animation Update</td>
-                                <td>
-                                    <input 
-                                        type="number"
-                                        id="lod_low_animation_frames"
-                                        value="0"
-                                    />
-                                </td>
-                                <td>
-                                    <input 
-                                        type="number"
-                                        id="lod_medium_animation_frames"
-                                        value="0"
-                                    />
-                                </td>
-                                <td>
-                                    <input 
-                                        type="number"
-                                        id="lod_high_animation_frames"
-                                        value="0"
-                                    />
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem;">
-                    <h2 style="font-weight: 600; font-size: x-large;">Additional Settings</h2>
-                    <span>Network quality</span><br />
+                    <div style="margin-bottom: 0.15rem;">
+                        <h3>Level of Detail</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Setting</th>
+                                    <th>Low Quality</th>
+                                    <th>Medium Quality</th>
+                                    <th>High Quality</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Trigger Distance</td>
+                                    <td>
+                                        <input 
+                                            type="number"
+                                            id="lod_low_distance"
+                                            value="0"
+                                        />
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="number"
+                                            id="lod_medium_distance"
+                                            value="0"
+                                        />
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="number"
+                                            id="lod_high_distance"
+                                            value="0"
+                                        />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Surface Samples</td>
+                                    <td>
+                                        <input 
+                                            type="number"
+                                            id="lod_low_surface_samples"
+                                            value="0"
+                                        />
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="number"
+                                            id="lod_medium_surface_samples"
+                                            value="0"
+                                        />
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="number"
+                                            id="lod_high_surface_samples"
+                                            value="0"
+                                        />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <button
                     id="save_settings"
                     onclick="javascript:setSettingsVisibility(false)"
+                    style="width: 40%; margin-top: 0.2rem; height: 2.5rem; font-size: x-large; padding: 0.1rem;"
                 >Save and Close Settings</button>
             </div>
         </div>
