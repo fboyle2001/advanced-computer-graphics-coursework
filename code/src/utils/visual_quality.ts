@@ -41,15 +41,15 @@ const defaultVisualSettings: VisualSettingsStore = {
     dynamicControl: false,
     levelsOfDetail: {
         low: {
-            distance: 30,
+            distance: 90,
             samples: 4
         },
         medium: {
-            distance: 20,
+            distance: 50,
             samples: 12
         },
         high: {
-            distance: 10,
+            distance: 30,
             samples: 24
         }
     }

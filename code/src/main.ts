@@ -45,17 +45,6 @@ const registeredComponents = new ComponentRegister(parametricLODLevels);
 
 setupVisualQualityEvents(registeredComponents, camera, composedRenderer, scene);
 
-const updateLevelsOfDetail = (
-    low: {distance: number, samples: number},
-    medium: {distance: number, samples: number},
-    high: {distance: number, samples: number}
-) => {
-    visualSettings.levelsOfDetail.low = low;
-    visualSettings.levelsOfDetail.medium = medium;
-    visualSettings.levelsOfDetail.high = high;
-    registeredComponents.lodSurfaceBinder.setLevels(getParametricLevels());
-}
-
 const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.Clock) => void> => {
     const gridMap = new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg");
     gridMap.wrapS = gridMap.wrapT = THREE.RepeatWrapping;
@@ -188,6 +177,10 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const carColumns = 5;
 
     for(let i = 0; i < carColumns; i++) {
+        if(i % 2 == 1) {
+            continue;
+        }
+
         lowPolyCarLoader.addToScene(model => {
             model.scale.set(2, 2, 2);
             model.rotation.set(0, -Math.PI / 2, 0);
@@ -240,10 +233,10 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         }
     }
 
-    for(let j = 0; j < 23; j++) {
+    for(let j = 0; j < 18; j++) {
         const [treeLod, treeLodComponents] = createNewTree();
         registeredComponents.addComponents(treeLodComponents);
-        treeLod.position.set(5, -2, 5 + 10 * j);
+        treeLod.position.set(5, -2, 5 + 12 * j);
         treeLod.rotation.set(0, -Math.PI / 2, 0);
         treeLod.scale.set(1.2, 1.2, 1.2);
         longCarParkTreeGroup.add(treeLod);
@@ -278,7 +271,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** START OF CLASSROOMS */
 
-    const [classroomOne, classroomOneComponents] = await createClassroom(blueMaterial, classroomRoofMaterial);
+    const [classroomOne, classroomOneComponents] = await createClassroom(blueMaterial, classroomRoofMaterial, true);
     registeredComponents.addComponents(classroomOneComponents);
     classroomOne.scale.set(3, 3, 3);
     classroomOne.rotation.set(0, Math.PI, 0);

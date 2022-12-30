@@ -3,7 +3,7 @@ import { ModelLoader } from "./model_loader";
 import { BezierSurface, BSplineSurface, createCubicBezierCurve, NURBSSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
 
-import chairModelData from '../progressive_meshes/chair_50.json';
+import chairModelData from '../progressive_meshes/chair_packed_reduced.json';
 import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
 import { ForwardAnimatedModel, InverseAnimatedModel, SkeletalModel } from "./skeletal_model";
@@ -18,8 +18,19 @@ const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
 const classroomCreator = new ModelLoader(null, `models/custom/classroom/roofless/model.gltf`);
 const trampolineEdgeCreator = new ModelLoader(null, `models/custom/trampoline/model.gltf`);
-const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/model_pack.gltf`);
+const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/model.gltf`);
 const corridorCreator = new ModelLoader(null, `models/custom/corridor/model.gltf`);
+
+let tableLOD: LOD | null = null;
+let computerLOD: LOD | null = null;
+
+const chairProgressiveMesh = new ProgressiveMesh(
+    chairModelData.vertices, 
+    chairModelData.polygons, 
+    chairModelData.maximums.vertices, 
+    chairModelData.maximums.polygons, 
+    chairModelData.reduction
+);
 
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): [Group, RegisterableComponents] => {
     const group = new Group();
@@ -104,7 +115,7 @@ const createBillboarded = (faces: number, billboardMaterial: Material): Group =>
 
 const createTreeMaker = async (billboardMaterial: Material): Promise<[InverseAnimatedModel, () => [LOD, RegisterableComponents]]> => {
     const billboarded = createBillboarded(2, billboardMaterial);
-    const riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/r/rigged_2.glb");
+    const riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/rigged.glb");
 
     const curveOne = createCubicBezierCurve(new Vector2(0, 0), new Vector2(0.3, 0.2), new Vector2(0.7, 1.2), new Vector2(1, 0.7))
     const curveTwo = createCubicBezierCurve(new Vector2(1, 0.7), new Vector2(1.3, 0.2), new Vector2(1.7, -0.1), new Vector2(2, 0))
@@ -168,25 +179,26 @@ const createTreeMaker = async (billboardMaterial: Material): Promise<[InverseAni
     ];
 }
 
-const createClassroom = async (chairMaterial: Material, roofMaterial: Material): Promise<[Group, RegisterableComponents]> => {
+const createClassroom = async (chairMaterial: Material, roofMaterial: Material, registerPM?: boolean): Promise<[Group, RegisterableComponents]> => {
     // Table LOD
-    let tableLOD = await createLevelOfDetail({
-        distances: initialLODs,
-        modelFolder: "models/custom/table/",
-        modelName: "model_pack.gltf"
-    });
-
+    if(!tableLOD) {
+        tableLOD = await createLevelOfDetail({
+            distances: initialLODs,
+            modelFolder: "models/custom/table/",
+            modelName: "model_pack.gltf"
+        });
+    }
 
     tableLOD.rotation.y = Math.PI;
     tableLOD.position.set(3, 0, 4);
-    
-    const chairProgressiveMesh = new ProgressiveMesh(
-        chairModelData.vertices, 
-        chairModelData.polygons, 
-        chairModelData.maximums.vertices, 
-        chairModelData.maximums.polygons, 
-        chairModelData.reduction
-    );
+
+    if(!computerLOD) {
+        computerLOD = await createLevelOfDetail({
+            distances: initialLODs,
+            modelFolder: "models/custom/computer/",
+            modelName: "model_packed.gltf"
+        });
+    }
 
     if(!classroomCreator.loaded) {
         await classroomCreator.loadAndBlock();
@@ -201,6 +213,12 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material):
     const table = tableLOD.clone();
     table.position.set(0.9, offset(), -0.75);
 
+    const computerLeft = computerLOD.clone();
+    computerLeft.position.set(0.77 * 1.7, 0.9 + offset(), -1.38);
+    computerLeft.scale.set(2, 2, 2);
+    computerLeft.rotation.y = Math.PI;
+
+    tableWithChairs.add(computerLeft);
     tableWithChairs.add(chairLeft);
     tableWithChairs.add(chairRight);
     tableWithChairs.add(table);
@@ -264,14 +282,16 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material):
     const samples = 40;
 
     const roofNURBS = new NURBSSurface(nsControlPoints, p, q, U, V, samples, roofMaterial);
-    roofNURBS.mesh.position.set(0, 2.66 + offset(), -10)
+    roofNURBS.mesh.position.set(0, 2.665 + offset(), -10)
     classroomWithTables.add(roofNURBS.mesh);
-    roofNURBS.control_point_grid.position.set(0, 2.66 + offset(), -10)
+    roofNURBS.control_point_grid.position.set(0, 2.665 + offset(), -10)
     classroomWithTables.add(roofNURBS.control_point_grid)
+
+    const prgs = registerPM ? [chairProgressiveMesh] : [];
 
     return [classroomWithTables, {
         lods: [tableLOD],
-        progressives: [chairProgressiveMesh],
+        progressives: prgs,
         lodSurfaces: [roofNURBS]
     }];
 }

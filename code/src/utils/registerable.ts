@@ -21,6 +21,7 @@ class ComponentRegister {
     progressives: ProgressiveMesh[];
     lodSurfaceBinder: LODParametricBinder;
     qcAnimatedModels: QCAnimatedModel[];
+    started: boolean;
 
     constructor(parametricLevels: {[distance: number]: number}) {
         this.lods = [];
@@ -28,6 +29,7 @@ class ComponentRegister {
         this.progressives = [];
         this.lodSurfaceBinder = new LODParametricBinder(parametricLevels);
         this.qcAnimatedModels = [];
+        this.started = false;
     }
 
     register = (registerable: Registerable): void => {
@@ -44,8 +46,12 @@ class ComponentRegister {
     }
 
     updateAll = (clock: Clock, camera: PerspectiveCamera) => {
+        if(!this.started) {
+            this.progressives.forEach(progressive => progressive.simulateNetworkDataArrival(20));
+            this.started = true;
+        }
+
         this.lodSurfaceBinder.updateAll(camera);
-        this.progressives.forEach(progressive => progressive.stepMesh());
         this.qcAnimatedModels.forEach(qc => qc.updateAll(clock));
     }
     
