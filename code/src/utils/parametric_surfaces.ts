@@ -10,10 +10,12 @@ const bernsteinBasis = (n: number, i: number): ((t: number) => number) => {
 abstract class ParametricSurface extends Registerable {
     abstract samples: number;
     abstract mesh: Mesh;
+    abstract control_point_grid: Points;
 
     abstract calculateSurfacePoint(u: number, v: number): Vector3;
     abstract updateSampleCount(samples: number): void;
     abstract _createGeometry(samples: number): ParametricGeometry;
+    abstract _generateControlPointGrid(): void;
 
     getComponents = () => {
         return {
@@ -30,8 +32,10 @@ class BezierSurface extends ParametricSurface {
     n_basis: ((t: number) => number)[] = [];
     samples: number;
     mesh: Mesh;
+    control_point_grid!: Points;
+    control_point_size: number;
 
-    constructor(control_points: Vector3[][], samples: number, material: Material) {
+    constructor(control_points: Vector3[][], samples: number, material: Material, control_point_size?: number) {
         super();
 
         this.control_points = control_points;
@@ -52,6 +56,8 @@ class BezierSurface extends ParametricSurface {
         }
 
         this.mesh = new Mesh(this._createGeometry(this.samples), material);
+        this.control_point_size = control_point_size ?? 0.2;
+        this._generateControlPointGrid();
     }
 
     calculateSurfacePoint = (u: number, v: number): Vector3 => {
@@ -84,11 +90,17 @@ class BezierSurface extends ParametricSurface {
         return new ParametricGeometry(this._calculateSurfacePoint, samples, samples);
     }
 
-    createControlPointGrid = (pointSize: number): Points => {
+    _generateControlPointGrid = () => {
         const flatPoints = this.control_points.flat();
         const pointsGeom = new BufferGeometry().setFromPoints(flatPoints);
-        const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xAA00AA, size: pointSize }))
-        return pointsMesh;
+        
+        if(this.control_point_grid) {
+            this.control_point_grid.geometry.dispose();
+            this.control_point_grid.geometry = pointsGeom;
+        } else{
+            const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xAA00AA, size: this.control_point_size }));
+            this.control_point_grid = pointsMesh;
+        }
     }
 }
 
@@ -114,8 +126,10 @@ class BSplineSurface extends ParametricSurface {
     v_basis: ((v: number) => number)[];
     samples: number;
     mesh: Mesh;
+    control_point_grid!: Points;
+    control_point_size: number;
 
-    constructor(control_points: Vector3[][], p: number, q: number, U: number[], V: number[], samples: number, material: Material) {
+    constructor(control_points: Vector3[][], p: number, q: number, U: number[], V: number[], samples: number, material: Material, control_point_size?: number) {
         super();
 
         this.control_points = control_points;
@@ -125,6 +139,8 @@ class BSplineSurface extends ParametricSurface {
         this.v_basis = [...Array(this.n).keys()].map(j => bSplineBasis(j, q, V));
         this.samples = samples;
         this.mesh = new Mesh(this._createGeometry(this.samples), material);
+        this.control_point_size = control_point_size ?? 0.2;
+        this._generateControlPointGrid();
     }
 
     updateSampleCount(samples: number): void {
@@ -157,11 +173,17 @@ class BSplineSurface extends ParametricSurface {
         return new ParametricGeometry(this._calculateSurfacePoint, samples, samples);
     }
 
-    createControlPointGrid = (pointSize: number): Points => {
+    _generateControlPointGrid = () => {
         const flatPoints = this.control_points.flat();
         const pointsGeom = new BufferGeometry().setFromPoints(flatPoints);
-        const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xAA00AA, size: pointSize }))
-        return pointsMesh;
+
+        if(this.control_point_grid) {
+            this.control_point_grid.geometry.dispose();
+            this.control_point_grid.geometry = pointsGeom;
+        } else{
+            const pointsMesh = new Points(pointsGeom, new PointsMaterial({ color: 0xAA00AA, size: this.control_point_size }));
+            this.control_point_grid = pointsMesh;
+        }
     }
 }
 

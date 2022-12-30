@@ -1,4 +1,4 @@
-import { PerspectiveCamera, Scene } from "three";
+import { Clock, PerspectiveCamera, Scene } from "three";
 import { LODParametricBinder, ParametricSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
 import { QCAnimatedModel } from "./skeletal_model";
@@ -43,22 +43,18 @@ class ComponentRegister {
         components.qcAnimatedModels?.forEach(qc => this.qcAnimatedModels.push(qc));
     }
 
-    toggleDebugMode = (debug: boolean, scene: Scene): void => {}
-
-    updateFixedSampleCounts = (samples: number) => {
+    updateAll = (clock: Clock, camera: PerspectiveCamera) => {
+        this.lodSurfaceBinder.updateAll(camera);
+        this.progressives.forEach(progressive => progressive.stepMesh());
+        this.qcAnimatedModels.forEach(qc => qc.updateAll(clock));
+    }
+    
+    setFixedSampleCounts = (samples: number) => {
         this.fixedSurfaces.forEach(surface => surface.updateSampleCount(samples));
     }
 
-    updateParametricLODs = (camera: PerspectiveCamera) => {
-        this.lodSurfaceBinder.updateAll(camera);
-    }
-
-    stepProgressiveMeshes = () => {
-        this.progressives.forEach(progressive => progressive.stepMesh());
-    }
-
-    lodDebug = () => {
-        this.lods.forEach(l => console.log({n: l.name, l: l.levels}))
+    setLODSurfaceLevels = (levels: {[distance: number]: number}) => {
+        this.lodSurfaceBinder.setLevels(levels);
     }
 
     setLODModelLevels = (distances: number[]) => {
@@ -73,6 +69,11 @@ class ComponentRegister {
 
     setAnimationQuality = (quality: string) => {
         this.qcAnimatedModels.forEach(qc => qc.setAnimationLevel(quality));
+    }
+
+    setControlPointGridVisibility = (visible: boolean) => {
+        this.lodSurfaceBinder.boundSurfaces.forEach(surface => surface.control_point_grid.visible = visible);
+        this.fixedSurfaces.forEach(surface => surface.control_point_grid.visible = visible);
     }
 }
 

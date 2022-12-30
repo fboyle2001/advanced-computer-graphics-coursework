@@ -2,18 +2,13 @@ import * as THREE from 'three';
 import { renderer, scene, camera, controls, stats, updateStatsDisplay } from './utils/three_setup';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
-import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
-import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
 import { createBikeShed, createClassroom, createCorridor, createPond, createRiggedHumanoid, createSportsField, createSportsHall, createTrampoline, createTreeMaker } from './utils/model_store';
-import { ComponentRegister, RegisterableComponents } from './utils/registerable';
+import { ComponentRegister } from './utils/registerable';
 import { BoxGeometry, Group, PlaneGeometry, Vector3 } from 'three';
 import { ModelLoader } from './utils/model_loader';
-import { populateSettingDefaults, defaultVisualSettings as visualSettings, setupVisualQualityEvents } from './utils/visual_quality';
-
-populateSettingDefaults();
+import { setVisualQualityDefaults, defaultVisualSettings as visualSettings, setupVisualQualityEvents } from './utils/visual_quality';
 
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
-
 
 /* BASIC MATERIALS */
 const purpleMaterial = new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THREE.DoubleSide });
@@ -23,10 +18,8 @@ const redMaterial = new THREE.MeshBasicMaterial({ color: 0x910c00, side: THREE.D
 const greenMaterial = new THREE.MeshBasicMaterial({ color: 0x239140, side: THREE.DoubleSide });
 
 const composedRenderer = new EffectComposer(renderer);
-// const primaryRenderPass = new SSAARenderPass(scene, camera, 0xFFFFFF, 1);
 const primaryRenderPass = new RenderPass(scene, camera);
 composedRenderer.addPass(primaryRenderPass);
-//composedRenderer.addPass(new SMAAPass(window.innerWidth, window.innerHeight))
 
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -129,6 +122,8 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         side: THREE.DoubleSide
     });
 
+    // RIGGED MODELS
+
     const [treeMakerOwner, createNewTree] = await createTreeMaker(treeBillboardMaterial);
     const riggedHumanMaker = await createRiggedHumanoid();
     registeredComponents.addComponents({ qcAnimatedModels: [treeMakerOwner, riggedHumanMaker] });
@@ -159,7 +154,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** END OF OUTSIDE ROAD */
 
-    /** START OF BIKE SHEDS */ // 8 30
+    /** START OF BIKE SHEDS */
     const bikeShedPlane = new THREE.Mesh(new BoxGeometry(7.8, 0.6, 30), bikeShedPavementMaterial);
     bikeShedPlane.position.add(new Vector3(3.9, 0.3 - offset(), 15));
     scene.add(bikeShedPlane);
@@ -176,7 +171,6 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         new THREE.Box3().setFromObject(bikeShed).getSize(size);
         bikeShed.position.add(new Vector3(0, 0.6 + offset(), (size.z + 0.2) * i));
         registeredComponents.addComponents(registerable);
-        // registerable.surfaces!.forEach(surface => lodParametricBinder.bindSurface(surface));
         scene.add(bikeShed);
     }
 
@@ -416,24 +410,14 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** END OF OUTSIDE FIELD */
 
-    // INITIAL UPDATES
-    // TODO: These should be moved to the Visual Quality settings and synced with the defaults
-    registeredComponents.setLODModelLevels([10, 20, 30]);
-    registeredComponents.updateFixedSampleCounts(visualSettings.fixedSurfaceSamples);
-    registeredComponents.setAnimationQuality("medium")
-
-    // setTimeout(() => registeredComponents.setLODModelLevels([60, 80, 100]), 2000)
-    // setTimeout(() => updateLevelsOfDetail({ distance: 30, samples: 1 }, { distance: 20, samples: 4 }, { distance: 10, samples: 40 }), 1000)
-    // setTimeout(() => registeredComponents.updateFixedSampleCounts(40), 2000)
+    // INITIAL QUALITY SETTINGS
+    setVisualQualityDefaults(registeredComponents, camera, composedRenderer, scene);
 
     return (clock: THREE.Clock) => {
-        registeredComponents.updateParametricLODs(camera);
-        registeredComponents.stepProgressiveMeshes();
+        registeredComponents.updateAll(clock, camera);
         trampolineUpdate(clock.getElapsedTime())
         pondUpdate(clock.getElapsedTime());
         outsideFieldUpdate(clock.getElapsedTime());
-        treeMakerOwner.updateAll(clock);
-        riggedHumanMaker.updateAll(clock);
         updateHumanTrampolineHeight(clock);
     };
 }

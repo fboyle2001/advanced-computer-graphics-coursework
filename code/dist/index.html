@@ -127,6 +127,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <h3>Material Quality</h3>
                         <select
+                            disabled="disabled"
                             id="material_quality"
                         >
                             <option value="highest">Highest (MeshStandardMaterial)</option>
@@ -151,6 +152,13 @@
                             type="number"
                             id="fixed_samples"
                             value="0"
+                        />
+                    </div>
+                    <div style="display: flex; flex-direction: row;">
+                        <h3>Enable Debug Mode</h3>
+                        <input 
+                            type="checkbox"
+                            id="debug_mode"
                         />
                     </div>
                     <h3>Level of Detail</h3>

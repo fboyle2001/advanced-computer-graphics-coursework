@@ -364,9 +364,8 @@ const createSportsHall = async (roofMaterial: Material): Promise<[Group, Registe
     const roof = new BSplineSurface(roofControlPoints, p, q, U, V, 40, roofMaterial);
     roof.mesh.position.add(new Vector3(0, 8.97 - a, -30));
     group.add(roof.mesh);
-    const cpGrid = roof.createControlPointGrid(0.2);
-    cpGrid.position.add(new Vector3(0, 8.97 - a, -30));
-    group.add(cpGrid);
+    roof.control_point_grid.position.add(new Vector3(0, 8.97 - a, -30));
+    group.add(roof.control_point_grid);
 
     return [group , {
         lodSurfaces: [roof]
