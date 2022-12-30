@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { BoxGeometry, Vector2, Vector3 } from 'three';
-import { SkeletalModel, SharedInverseAnimatedModel } from './utils/skeletal_model';
+import { BoxGeometry, Clock, SkinnedMesh, Vector2, Vector3 } from 'three';
+import { SkeletalModel, SharedInverseAnimatedModel, ForwardAnimatedModel } from './utils/skeletal_model';
 import { renderer, scene, camera, controls, stats, updateStatsDisplay } from './utils/three_setup';
 import { createCubicBezierCurve } from './utils/parametric_surfaces';
 import { createTreeMaker } from './utils/model_store';
@@ -35,90 +35,60 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         side: THREE.DoubleSide
     });
 
-    const [treeMaker, spawnNewTreeLOD] = await createTreeMaker(billboardMaterial)
+    const [treeMaker, spawnNewTreeLOD] = await createTreeMaker(billboardMaterial);
 
-    // Register the treeMaker with the QC settings
+    const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/rigged_basic_targets.glb");
+    const forwardKinematicModel = new ForwardAnimatedModel(riggedPerson, {low: {}}, "low");
 
-    // setTimeout(() => treeMaker.setAnimationLevel("medium"), 2500)
-    // setTimeout(() => treeMaker.setAnimationLevel("high"), 5000)
-    
-    const treeGroup = new THREE.Group();
+    console.log({h: riggedPerson.getSkeletonHierarchy()})
+
+    forwardKinematicModel.addAnimation(
+        "stretch-1", 
+        (skinnedMesh: SkinnedMesh, skeletal: SkeletalModel) => {},
+        (skinnedMesh: SkinnedMesh, skeletal: SkeletalModel, clock: Clock) => {
+            skinnedMesh.skeleton.bones[skeletal.bone_map["spine001"]].rotation.set(0, Math.cos(clock.getElapsedTime()) * (Math.PI / 2 - 0.5), 0);
+        }
+    );
+
+    forwardKinematicModel.addAnimation(
+        "bounce", 
+        (skinnedMesh: SkinnedMesh, skeletal: SkeletalModel) => {
+            skinnedMesh.skeleton.bones[skeletal.bone_map["upper_armL"]].rotateZ(- Math.PI / 4);
+            skinnedMesh.skeleton.bones[skeletal.bone_map["forearmL"]].rotateZ(- Math.PI / 8);
+            skinnedMesh.skeleton.bones[skeletal.bone_map["forearmL"]].rotateX(Math.PI / 4);
+
+            skinnedMesh.skeleton.bones[skeletal.bone_map["upper_armR"]].rotateZ(Math.PI / 4);
+            skinnedMesh.skeleton.bones[skeletal.bone_map["forearmR"]].rotateZ(Math.PI / 8);
+            skinnedMesh.skeleton.bones[skeletal.bone_map["forearmR"]].rotateX(Math.PI / 4);
+        },
+        (skinnedMesh: SkinnedMesh, skeletal: SkeletalModel, clock: Clock) => {
+            skinnedMesh.skeleton.bones[skeletal.bone_map["thighL"]].scale.set(1, 1 - 0.3 * Math.abs(Math.cos(0.5 * clock.getElapsedTime())), 1);
+            skinnedMesh.skeleton.bones[skeletal.bone_map["thighR"]].scale.set(1, 1 - 0.3 * Math.abs(Math.cos(0.5 * clock.getElapsedTime())), 1);
+            const spineRotationX = Math.PI / 16 + (3 * Math.PI / 16) * Math.cos(clock.getElapsedTime())
+            skinnedMesh.skeleton.bones[skeletal.bone_map["spine001"]].rotation.setFromVector3(new Vector3(spineRotationX, 0, 0))
+        }
+    );
 
     for(let i = 0; i < 5; i++) {
-        for(let j = 0; j < 5; j++) {
-            const [lod, components] = spawnNewTreeLOD();
-            lod.position.set(5 * i, 0, 5 * j);
-            scene.add(lod);
-        }
+        const dupe = forwardKinematicModel.spawnObject();
+        dupe.position.set(2 * i, 0, 0);
+        scene.add(dupe);
     }
 
-    // scene.add(treeGroup);
-    
-    
-    // const copy = treeMaker.cloneMesh();
-    // copy.position.set(0, 5, 0)
-    // scene.add(copy)
-    // const copy = treeMaker.object.clone();
-    // copy.position.set(0, 0, 0);
-    // scene.add(copy);
+    forwardKinematicModel.selectAnimation(0, "bounce");
+    forwardKinematicModel.selectAnimation(1, "stretch-1");
 
-    // 
-    // // const riggedTree = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/rigged_basic_targets.glb")
-    // scene.add(riggedTree.model);
-    // scene.add(riggedTree.skinned_mesh);
-    // scene.add(riggedTree.skeleton_helper);
+    // console.log({b: riggedPerson.getBoneNames(), h: riggedPerson.getSkeletonHierarchy()})
 
-    // console.log({
-    //     hierarchy: riggedTree.getSkeletonHierarchy(),
-    //     bones: riggedTree.getBoneNames(),
-    //     map: riggedTree.bone_map
-    // });
-
-    // const ikSolver = new CCDIKSolver(riggedTree.skinned_mesh, [
-    //     {
-    //         "effector": 3,
-    //         "iteration": 10,
-    //         // @ts-ignore
-    //         "links": [{index: 2}, {index: 1}], 
-    //         "maxAngle": 0.0001,
-    //         "target": 4
-    //     }
-    // ]);
-
-    // ikSolver.
-
-    // const target = new THREE.Vector3(1, 1, 0);
-    // const visualTarget = new THREE.Mesh(new BoxGeometry(0.2, 0.2, 0.2), traceMaterial);
-    // visualTarget.position.copy(target);
-    // scene.add(visualTarget);
-
-    // const clock = new THREE.Clock();
-
-    // const left = createCubicBezierCurve(new Vector2(0, 0), new Vector2(0.3, 0.2), new Vector2(0.7, 1.2), new Vector2(1, 0.7))
-    // const right = createCubicBezierCurve(new Vector2(1, 0.7), new Vector2(1.3, 0.2), new Vector2(1.7, -0.1), new Vector2(2, 0))
-
-    // const func = (_t: number) => {
-    //     const t = _t % 2;
-
-    //     if(t < 1) {
-    //         return left(t);
-    //     }
-
-    //     return right(t - 1);
-    // }
-
-    // for(let i = 0; i < 101; i++) {
-    //     const t = i / 50;
-    //     console.log({t, y: func(t)})
-    // }
-
+    // // riggedPerson.getBone("shinL").position.add(new Vector3(0, 0, -0.2))
+    // // riggedPerson.getBone("shinR").position.add(new Vector3(0, 0, -0.2))
+    // // riggedPerson.getBone("spine").position.add(new Vector3(0, 0.4, 0.2))
+    // riggedPerson.getBone("thighR").position.add(new Vector3(0, 0.4, 0.2))
     const clock = new THREE.Clock();
 
     return () => {
-        // riggedTree.getBone("BoneTarget").position.copy(new THREE.Vector3(func(clock.getElapsedTime()), 6, 0));
-        // visualTarget.position.copy(target);
-        // ikSolver.update();
-        treeMaker.update(clock);
+        forwardKinematicModel.updateAll(clock);
+        // riggedPerson.getBone("spine001").rotation.set(0, Math.cos(clock.getElapsedTime()) * (Math.PI / 2 - 0.5), 0); // 'Stretch animation'
     };
 }
 

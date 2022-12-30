@@ -405,7 +405,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         trampolineUpdate(clock.getElapsedTime())
         pondUpdate(clock.getElapsedTime());
         outsideFieldUpdate(clock.getElapsedTime());
-        treeMakerOwner.update(clock);
+        treeMakerOwner.updateAll(clock);
     };
 }
 

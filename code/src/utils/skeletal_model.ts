@@ -129,6 +129,7 @@ interface SingleInverseKinematicSetup {
 
 abstract class QCAnimatedModel {
     abstract setAnimationLevel(level: string): void;
+    abstract updateAll(clock: Clock): void;
 }
 
 class SharedInverseAnimatedModel extends QCAnimatedModel {
@@ -183,7 +184,7 @@ class SharedInverseAnimatedModel extends QCAnimatedModel {
         this.ikSolvers = newSolvers;
     }
 
-    update = (clock: Clock) => {
+    updateAll = (clock: Clock) => {
         const targetVector = this.ikTarget.target(clock);
         
         for(let i = 0; i < this.skinnedMeshes.length; i++) {
@@ -198,4 +199,87 @@ class SharedInverseAnimatedModel extends QCAnimatedModel {
 
 }
 
-export { SkeletalModel, SharedInverseAnimatedModel, QCAnimatedModel };
+class ForwardAnimatedModel extends QCAnimatedModel {
+    baseSkeletal: SkeletalModel;
+    animationLevels: {[level: string]: {}};
+    skinnedMeshes: SkinnedMesh[];
+    currentAnimationLevel: string;
+    baseObject!: Group;
+    initialPoses: {[name: string]: (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel) => void};
+    animations: {[name: string]: (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel, clock: Clock) => void}
+    selectedAnimations: string[];
+
+    constructor(skeletal: SkeletalModel, animationLevels: {[level: string]: {}}, defaultAnimationLevel: string) {
+        super();
+        this.baseSkeletal = skeletal;
+        this.animationLevels = animationLevels;
+        this.skinnedMeshes = [];
+        this.currentAnimationLevel = defaultAnimationLevel;
+        this.animations = {
+            "disabled": (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel, clock: Clock) => {}
+        };
+        this.selectedAnimations = [];
+        this.initialPoses = {
+            "disabled": (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel) => {}
+        };
+        this._createBaseObject();
+    }
+
+    addAnimation = (
+        name: string, 
+        initialPose: (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel) => void, 
+        animationLoop: (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel, clock: Clock) => void
+    ): void => {
+        this.initialPoses[name] = initialPose;
+        this.animations[name] = animationLoop;
+    }
+
+    setAnimationLevel(level: string): void {
+        
+    }
+
+    _createBaseObject = () => {
+        const object = new Group();
+        
+        object.add(this.baseSkeletal.model);
+        object.add(this.baseSkeletal.skinned_mesh);
+
+        this.baseObject = object;
+    }
+
+    spawnObject = (): Object3D => {
+        const object = SkeletonUtils.clone(this.baseObject);
+        let skinnedMesh: SkinnedMesh;
+
+        object.children.forEach(child => {
+            // @ts-ignore
+            if(child.isSkinnedMesh) {
+                skinnedMesh = child as SkinnedMesh;
+            }
+        });
+
+        object.add(SkeletonUtils.getHelperFromSkeleton(skinnedMesh!.skeleton));
+
+        this.skinnedMeshes.push(skinnedMesh!);
+        this.selectedAnimations.push("disabled");
+
+        return object;
+    }
+
+    selectAnimation = (idx: number, animationName: string) => {
+        this.initialPoses[animationName](this.skinnedMeshes[idx], this.baseSkeletal);
+        this.selectedAnimations[idx] = animationName;
+    }
+
+    updateAll = (clock: Clock): void => {
+        for(let i = 0; i < this.skinnedMeshes.length; i++) {
+            if(!this.skinnedMeshes[i].visible) {
+                continue;
+            }
+
+            this.animations[this.selectedAnimations[i]](this.skinnedMeshes[i], this.baseSkeletal, clock); 
+        }
+    }
+}
+
+export { SkeletalModel, SharedInverseAnimatedModel, ForwardAnimatedModel, QCAnimatedModel };
