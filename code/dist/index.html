@@ -60,6 +60,7 @@
                 "
             >
                 <button 
+                    id="open_settings"
                     onclick="javascript:setSettingsVisibility(true)"
                 >Open Settings</button>
                 <button 
@@ -99,20 +100,34 @@
                 <h1 style="font-weight: 700; font-size: xx-large; margin-bottom: 0.2rem;">Visual Control Settings</h1>
                 <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem;">
                     <h2 style="font-weight: 600; font-size: x-large;">Dynamic Control</h2>
-                    <span>Set target framerate; locks all other settings; presets?</span><br />
+                    <input
+                        type="checkbox"
+                        id="dynamic_control"
+                    />
+                    <input
+                        type="number"
+                        id="target_fps"
+                    />
                 </div>
-                <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem;">
+                <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem;" id="custom_settings">
                     <h2 style="font-weight: 600; font-size: x-large;">Render Quality</h2>
                     <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
                         <h3 style="margin-right: 0.4rem;">Render Distance</h3>
-                        <select
+                        <!-- <select
                             id="render_distance"
                             style="padding: 0.1rem;"
                         >
                             <option value="20">Low (20 units)</option>
                             <option value="200">Medium (200 units)</option>
                             <option value="1000">High (1000 units)</option>
-                        </select>
+                            <option disabled="disabled" hidden="hidden">Dynamic</option>
+                        </select> -->
+                        <input 
+                            type="number"
+                            id="render_distance"
+                            value="0"
+                            style="padding: 0.1rem;"
+                        />
                     </div>
                     <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
                         <h3 style="margin-right: 0.4rem;">Anti-Aliasing</h3>

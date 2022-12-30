@@ -7,6 +7,7 @@ import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 const stats = Stats();

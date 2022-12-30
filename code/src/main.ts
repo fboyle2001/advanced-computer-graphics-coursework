@@ -6,7 +6,7 @@ import { createBikeShed, createClassroom, createCorridor, createPond, createRigg
 import { ComponentRegister } from './utils/registerable';
 import { BoxGeometry, Group, PlaneGeometry, Vector3 } from 'three';
 import { ModelLoader } from './utils/model_loader';
-import { setVisualQualityDefaults, defaultVisualSettings as visualSettings, setupVisualQualityEvents } from './utils/visual_quality';
+import { setVisualQualityDefaults, defaultVisualSettings as visualSettings, setupVisualQualityEvents, dynamicQualityControl } from './utils/visual_quality';
 
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
@@ -414,11 +414,14 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     setVisualQualityDefaults(registeredComponents, camera, composedRenderer, scene);
 
     return (clock: THREE.Clock) => {
+        const delta = clock.getDelta();
+
         registeredComponents.updateAll(clock, camera);
         trampolineUpdate(clock.getElapsedTime())
         pondUpdate(clock.getElapsedTime());
         outsideFieldUpdate(clock.getElapsedTime());
         updateHumanTrampolineHeight(clock);
+        dynamicQualityControl(registeredComponents, camera, composedRenderer, scene, delta, clock.getElapsedTime());
     };
 }
 
