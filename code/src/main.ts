@@ -4,16 +4,15 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass';
 import { SSAARenderPass } from 'three/examples/jsm/postprocessing/SSAARenderPass';
-import { createBikeShed, createClassroom, createCorridor, createPond, createSportsField, createSportsHall, createTrampoline, createTreeMaker } from './utils/model_store';
+import { createBikeShed, createClassroom, createCorridor, createPond, createRiggedHumanoid, createSportsField, createSportsHall, createTrampoline, createTreeMaker } from './utils/model_store';
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
-import { BezierSurface, LODParametricBinder, NURBSSurface } from './utils/parametric_surfaces';
-import { BoxGeometry, LOD, Material, Plane, PlaneGeometry, Vector3 } from 'three';
+import { BoxGeometry, Group, PlaneGeometry, Vector3 } from 'three';
 import { ModelLoader } from './utils/model_loader';
-import { ProgressiveMesh } from './utils/progressive_mesh';
-import { createLevelOfDetail } from './utils/level_of_detail';
-import chairModelData from './progressive_meshes/chair_50.json';
+import { defaultVisualSettings as visualSettings } from './utils/visual_quality';
+
 
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
+
 
 /* BASIC MATERIALS */
 const purpleMaterial = new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THREE.DoubleSide });
@@ -36,38 +35,11 @@ window.addEventListener('resize', () => {
     primaryRenderPass.scene = scene;
 }, false);
 
-enum QualityLevel { Low, Medium, High }
-enum AntiAliasing { None, FXAA, SSAA, SMAA }
-
-let visualSettings = {
-    renderQuality: {
-        surfaceSamples: 24,
-        levelsOfDetail: {
-            low: {
-                distance: 30,
-                samples: 4
-            },
-            medium: {
-                distance: 20,
-                samples: 12
-            },
-            high: {
-                distance: 10,
-                samples: 24
-            }
-        },
-        animationQuality: QualityLevel.Medium
-    },
-    postProcessing: {
-        antialiasing: AntiAliasing.None
-    }
-}
-
 const getParametricLevels = () => {
     let levels: {[distance: number]: number} = {};
 
-    for(const key of Object.keys(visualSettings.renderQuality.levelsOfDetail)) {
-        const { distance, samples } = visualSettings.renderQuality.levelsOfDetail[key as keyof typeof visualSettings.renderQuality.levelsOfDetail];
+    for(const key of Object.keys(visualSettings.levelsOfDetail)) {
+        const { distance, samples } = visualSettings.levelsOfDetail[key as keyof typeof visualSettings.levelsOfDetail];
         levels[distance] = samples;
     }
 
@@ -77,12 +49,20 @@ const getParametricLevels = () => {
 const parametricLODLevels = getParametricLevels();
 const registeredComponents = new ComponentRegister(parametricLODLevels);
 
-const updateLevelsOfDetail = (low: {distance: number, samples: number}, medium: {distance: number, samples: number}, high: {distance: number, samples: number}) => {
-    visualSettings.renderQuality.levelsOfDetail.low = low;
-    visualSettings.renderQuality.levelsOfDetail.medium = medium;
-    visualSettings.renderQuality.levelsOfDetail.high = high;
+const updateLevelsOfDetail = (
+    low: {distance: number, samples: number, framesPerAnimationUpdate: number},
+    medium: {distance: number, samples: number, framesPerAnimationUpdate: number},
+    high: {distance: number, samples: number, framesPerAnimationUpdate: number}
+) => {
+    visualSettings.levelsOfDetail.low = low;
+    visualSettings.levelsOfDetail.medium = medium;
+    visualSettings.levelsOfDetail.high = high;
     registeredComponents.lodSurfaceBinder.setLevels(getParametricLevels());
 }
+
+document.getElementById("low_quality")?.addEventListener("click", (event) => {
+    registeredComponents.updateFixedSampleCounts(1);
+})
 
 const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.Clock) => void> => {
     const gridMap = new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg");
@@ -153,6 +133,10 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const [treeMakerOwner, createNewTree] = await createTreeMaker(treeBillboardMaterial);
     registeredComponents.addComponents({ qcAnimatedModels: [treeMakerOwner] });
 
+    const riggedHumanMaker = await createRiggedHumanoid();
+    riggedHumanMaker.setAnimationLevel("high");
+
+
     /** START OF OUTSIDE ROAD */
 
     const outsideRoadPlane = new THREE.Mesh(new PlaneGeometry(200, 15), redMaterial);
@@ -191,7 +175,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const bikeShedCount = 3;
 
     for(let i = 0; i < bikeShedCount; i++) {
-        const [bikeShed, registerable] = createBikeShed(visualSettings.renderQuality.surfaceSamples, woodenPanelMaterial, brownMaterial, purpleMaterial);
+        const [bikeShed, registerable] = createBikeShed(visualSettings.fixedSurfaceSamples, woodenPanelMaterial, brownMaterial, purpleMaterial);
         let size = new Vector3();
         new THREE.Box3().setFromObject(bikeShed).getSize(size);
         bikeShed.position.add(new Vector3(0, 0.6 + offset(), (size.z + 0.2) * i));
@@ -287,11 +271,6 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     entrancePlane.position.set(31.25, -offset(), 45);
     scene.add(entrancePlane);
 
-    const treeEntrancePlane = new THREE.Mesh(new PlaneGeometry(8.36, 30), greenMaterial);
-    treeEntrancePlane.rotation.x = -Math.PI / 2;
-    treeEntrancePlane.position.set(38.18, -offset(), 45);
-    scene.add(treeEntrancePlane);
-
     const entrancePavement = new THREE.Mesh(new BoxGeometry(2.5, 4.0, 30), redMaterial);
     entrancePavement.position.add(new Vector3(27.5,-1.4 - offset(), 45));
     scene.add(entrancePavement);
@@ -348,19 +327,69 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     registeredComponents.addComponents(sportsHallComponents);
     sportsHallBuilding.rotation.set(0, Math.PI, 0)
     sportsHallBuilding.position.add(new Vector3(60, -offset(), 30));
-    // sportsHallBuilding.position.add(new Vector3(0, 5-offset(), 0));
+    sportsHallBuilding.scale.set(1.474, 1, 1)
     scene.add(sportsHallBuilding);
 
-    // const trampolineBuildingPlane = new THREE.Mesh(new PlaneGeometry(26, 30), carParkMaterial);
-    // trampolineBuildingPlane.rotation.x = -Math.PI / 2;
-    // trampolineBuildingPlane.position.add(new Vector3(34 + trampolineBuildingPlane.geometry.parameters.width / 2, -offset(), 45));
-    // scene.add(trampolineBuildingPlane);
-
+    const trampolineGroup = new Group();
     const [trampoline, trampolineComponents, trampolineUpdate] = await createTrampoline(gridMaterial);
     registeredComponents.addComponents(trampolineComponents);
-    trampoline.scale.set(1.25, 1.25, 1.25);
-    trampoline.position.set(3.4, 0, -18);
-    sportsHallBuilding.add(trampoline)
+
+    trampolineGroup.add(trampoline);
+    trampolineGroup.scale.set(1.25, 1.25, 1.25);
+    trampolineGroup.position.set(3.4, 0, -18);
+
+    const trampolinePeopleGroup = new Group();
+
+    const topLeftTrampolineHuman = riggedHumanMaker.spawnObject();
+    topLeftTrampolineHuman.position.set(1.875 + 0.25, 0.78, 1.875 + 0.25);
+    trampolinePeopleGroup.add(topLeftTrampolineHuman);
+
+    const bottomLeftTrampolineHuman = riggedHumanMaker.spawnObject();
+    bottomLeftTrampolineHuman.position.set(1.875 + 0.25, 0.78, 5.625 + 0.25);
+    trampolinePeopleGroup.add(bottomLeftTrampolineHuman);
+
+    const bottomRightTrampolineHuman = riggedHumanMaker.spawnObject();
+    bottomRightTrampolineHuman.position.set(5.625 + 0.25, 0.78, 5.625 + 0.25);
+    trampolinePeopleGroup.add(bottomRightTrampolineHuman);
+
+    const topRightTrampolineHuman = riggedHumanMaker.spawnObject();
+    topRightTrampolineHuman.position.set(5.625 + 0.25, 0.78, 1.875 + 0.25);
+    trampolinePeopleGroup.add(topRightTrampolineHuman);
+
+    for(let i = 0; i < 4; i++) {
+        riggedHumanMaker.selectAnimation(i, `bounce${i}`)
+    }
+
+    const calculateHumanHeight = (elapsed: number, offset: number): number => (0.78 - 0.2) + Math.abs(Math.cos((Math.PI / 2) * (elapsed + offset)));
+    const updateHumanTrampolineHeight = (clock: THREE.Clock) => {
+        for(let i = 0; i < 4; i++) {
+            const x = trampolinePeopleGroup.children[i].position.x;
+            const y = calculateHumanHeight(clock.getElapsedTime(), i / 4);
+            const z = trampolinePeopleGroup.children[i].position.z;
+            trampolinePeopleGroup.children[i].position.set(x, y, z);
+        }
+    }
+
+    trampolineGroup.add(trampolinePeopleGroup);
+    trampolineGroup.scale.set(2 / 1.474, 2, 2);
+
+    const stretchingPeopleGroup = new Group();
+
+    for(let i = 0; i < 2; i++) {
+        for(let j = 0; j < 2; j++) {
+            const person = riggedHumanMaker.spawnObject();
+            riggedHumanMaker.selectAnimation(4 + i * 2 + j, "stretch");
+            person.position.set(8 * i, 0, 2 * j)
+            person.rotateY(((-1) ** i) * Math.PI / 2)
+            stretchingPeopleGroup.add(person);
+        }
+    }
+
+    stretchingPeopleGroup.scale.set(2 / 1.474, 2, 2);
+    stretchingPeopleGroup.position.set(3.4, 0, -26);
+
+    sportsHallBuilding.add(trampolineGroup)
+    sportsHallBuilding.add(stretchingPeopleGroup);
 
     /** END OF SPORTS HALL */
 
@@ -393,7 +422,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     // INITIAL UPDATES
     registeredComponents.setLODModelLevels([10, 20, 30]);
-    registeredComponents.updateFixedSampleCounts(visualSettings.renderQuality.surfaceSamples);
+    registeredComponents.updateFixedSampleCounts(visualSettings.fixedSurfaceSamples);
 
     // setTimeout(() => registeredComponents.setLODModelLevels([60, 80, 100]), 2000)
     // setTimeout(() => updateLevelsOfDetail({ distance: 30, samples: 1 }, { distance: 20, samples: 4 }, { distance: 10, samples: 40 }), 1000)
@@ -406,6 +435,8 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         pondUpdate(clock.getElapsedTime());
         outsideFieldUpdate(clock.getElapsedTime());
         treeMakerOwner.updateAll(clock);
+        riggedHumanMaker.updateAll(clock);
+        updateHumanTrampolineHeight(clock);
     };
 }
 

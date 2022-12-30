@@ -6,7 +6,7 @@ import { ProgressiveMesh } from "./progressive_mesh";
 import chairModelData from '../progressive_meshes/chair_50.json';
 import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
-import { InverseAnimatedModel, SkeletalModel } from "./skeletal_model";
+import { ForwardAnimatedModel, InverseAnimatedModel, SkeletalModel } from "./skeletal_model";
 
 const initialLODs = {
     low: 30,
@@ -328,10 +328,10 @@ const createTrampoline = async (surfaceMaterial: Material): Promise<[Group, Regi
     return [group, {
         fixedSurfaces: [bouncySurface]
     }, (elapsed) => {
-        bouncySurface.updateControlPoint(1, 1, new Vector3(1.875, bounceFactor * Math.sin(Math.PI * elapsed) - bounceDepth, 1.875))
-        bouncySurface.updateControlPoint(1, 2, new Vector3(1.875, bounceFactor * Math.sin(Math.PI * (elapsed + 0.25)) - bounceDepth, 5.625))
-        bouncySurface.updateControlPoint(2, 1, new Vector3(5.625, bounceFactor * Math.sin(Math.PI * (elapsed + 0.5)) - bounceDepth, 1.875))
-        bouncySurface.updateControlPoint(2, 2, new Vector3(5.625, bounceFactor * Math.sin(Math.PI * (elapsed + 0.75)) - bounceDepth, 5.625))
+        bouncySurface.updateControlPoint(1, 1, new Vector3(1.875, bounceFactor * Math.cos(Math.PI * elapsed) - bounceDepth, 1.875))
+        bouncySurface.updateControlPoint(1, 2, new Vector3(1.875, bounceFactor * Math.cos(Math.PI * (elapsed + 0.25)) - bounceDepth, 5.625))
+        bouncySurface.updateControlPoint(2, 1, new Vector3(5.625, bounceFactor * Math.cos(Math.PI * (elapsed + 0.5)) - bounceDepth, 1.875))
+        bouncySurface.updateControlPoint(2, 2, new Vector3(5.625, bounceFactor * Math.cos(Math.PI * (elapsed + 0.75)) - bounceDepth, 5.625))
     }];
 }
 
@@ -540,4 +540,64 @@ const createSportsField = (surfaceMaterial: Material): [Group, RegisterableCompo
     }];
 }
 
-export { createBikeShed, createBillboarded, createClassroom, createTrampoline, createSportsHall, createPond, createCorridor, createSportsField, createTreeMaker };
+const createRiggedHumanoid = async (): Promise<ForwardAnimatedModel> => {
+    const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/rigged_basic_targets.glb");
+    const forwardKinematicModel = new ForwardAnimatedModel(riggedPerson, {
+        low: 8,
+        medium: 4,
+        high: 1
+    }, "low");
+
+    console.log({h: riggedPerson.getSkeletonHierarchy()})
+
+    forwardKinematicModel.addAnimation(
+        "stretch", 
+        (skinnedMesh: THREE.SkinnedMesh, skeletal: SkeletalModel) => {},
+        (skinnedMesh: THREE.SkinnedMesh, skeletal: SkeletalModel, clock: THREE.Clock) => {
+            skinnedMesh.skeleton.bones[skeletal.bone_map["spine001"]].rotation.set(0, Math.cos(clock.getElapsedTime()) * (Math.PI / 2 - 0.5), 0);
+        }
+    );
+
+    const bounceSpeed = Math.PI;
+
+    for(let i = 0; i < 4; i++) {
+        const offset = i / 4;
+
+        forwardKinematicModel.addAnimation(
+            `bounce${i}`, 
+            (skinnedMesh: THREE.SkinnedMesh, skeletal: SkeletalModel) => {
+                skinnedMesh.skeleton.bones[skeletal.bone_map["upper_armL"]].rotateZ(- Math.PI / 4);
+                skinnedMesh.skeleton.bones[skeletal.bone_map["forearmL"]].rotateZ(- Math.PI / 8);
+                skinnedMesh.skeleton.bones[skeletal.bone_map["forearmL"]].rotateX(Math.PI / 4);
+    
+                skinnedMesh.skeleton.bones[skeletal.bone_map["upper_armR"]].rotateZ(Math.PI / 4);
+                skinnedMesh.skeleton.bones[skeletal.bone_map["forearmR"]].rotateZ(Math.PI / 8);
+                skinnedMesh.skeleton.bones[skeletal.bone_map["forearmR"]].rotateX(Math.PI / 4);
+            },
+            (skinnedMesh: THREE.SkinnedMesh, skeletal: SkeletalModel, clock: THREE.Clock) => {
+                const offsetTime = clock.getElapsedTime() + offset;
+                const thighY = 1 - 0.3 * Math.abs(Math.cos(0.5 * bounceSpeed * offsetTime));
+                skinnedMesh.skeleton.bones[skeletal.bone_map["thighL"]].scale.set(1, thighY, 1);
+                skinnedMesh.skeleton.bones[skeletal.bone_map["thighR"]].scale.set(1, thighY, 1);
+                const spineRotationX = Math.PI / 16 + (3 * Math.PI / 16) * Math.cos(bounceSpeed * offsetTime)
+                skinnedMesh.skeleton.bones[skeletal.bone_map["spine001"]].rotation.setFromVector3(new Vector3(spineRotationX, 0, 0));
+            }
+        );
+    }
+    
+
+    return forwardKinematicModel;
+}
+
+export { 
+    createBikeShed, 
+    createBillboarded, 
+    createClassroom, 
+    createTrampoline, 
+    createSportsHall, 
+    createPond, 
+    createCorridor, 
+    createSportsField, 
+    createTreeMaker,
+    createRiggedHumanoid
+};

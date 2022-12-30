@@ -261,7 +261,7 @@ class ForwardAnimatedModel extends QCAnimatedModel {
             }
         });
 
-        object.add(SkeletonUtils.getHelperFromSkeleton(skinnedMesh!.skeleton));
+        // object.add(SkeletonUtils.getHelperFromSkeleton(skinnedMesh!.skeleton));
 
         this.skinnedMeshes.push(skinnedMesh!);
         this.selectedAnimations.push("disabled");
