@@ -171,7 +171,7 @@ const createTreeMaker = async (billboardMaterial: Material): Promise<[InverseAni
             const lod = new LOD();
 
             lod.addLevel(billboarded.clone(), 30);
-            lod.addLevel(billboarded.clone(), 20);
+            lod.addLevel(treeMaker.spawnObject(), 20);
             lod.addLevel(treeMaker.spawnObject(), 10);
 
             return [lod, { lods: [lod] }]
@@ -560,7 +560,7 @@ const createSportsField = (surfaceMaterial: Material): [Group, RegisterableCompo
 }
 
 const createRiggedHumanoid = async (): Promise<ForwardAnimatedModel> => {
-    const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/rigged_basic_targets.glb");
+    const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/coloured_rigged_packed.glb");
     const forwardKinematicModel = new ForwardAnimatedModel(riggedPerson, {
         low: 8,
         medium: 4,

@@ -45,7 +45,7 @@ const defaultVisualSettings: VisualSettingsStore = {
             samples: 4
         },
         medium: {
-            distance: 50,
+            distance: 60,
             samples: 12
         },
         high: {
@@ -398,7 +398,6 @@ const dynamicQualityControl = (
     const averageFPS = runningAverageFPS.reduce((a, b) => a + b, 0) / runningAverageFPS.length;
     const lowerVarianceBound = currentVisualSettings.targetFPS * 0.99;
     const upperVarianceBound = currentVisualSettings.targetFPS * 1.05;
-    console.log({averageFPS, lowerVarianceBound, upperVarianceBound, runningAverageFPS})
 
     // Make changes in response to too little or too much FPS to tend to the target FPS
     if(averageFPS < lowerVarianceBound) {
