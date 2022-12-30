@@ -23,6 +23,10 @@
                     document.getElementById("log_output").scrollTo(0, document.getElementById("log_output").scrollTop)
                 }
             }
+
+            const setSettingsVisibility = (open) => {
+                document.getElementById("settings_panel").style.display = open ? "flex" : "none";
+            }
         </script>
     </head>
     <body style="font-family: Arial, sans-serif;">
@@ -55,7 +59,9 @@
                     max-height: 35%;
                 "
             >
-                <button id="low_quality">Low Quality</button>
+                <button 
+                    onclick="javascript:setSettingsVisibility(true)"
+                >Open Settings</button>
                 <button 
                     id="show_log"
                     style="min-width: 6rem;"
@@ -77,8 +83,9 @@
         <div
             style="
                 position: absolute; width: 100%; height: 100%;
-                display: flex; flex-direction: column; justify-content: center; align-items: center;
+                display: none; flex-direction: column; justify-content: center; align-items: center;
             "
+            id="settings_panel"
         >
             <div
                 style="
@@ -96,6 +103,56 @@
                 </div>
                 <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem;">
                     <h2 style="font-weight: 600; font-size: x-large;">Render Quality</h2>
+                    <div style="display: flex; flex-direction: row;">
+                        <h3>Render Distance</h3>
+                        <select
+                            id="render_distance"
+                        >
+                            <option value="20">Low (20 units)</option>
+                            <option value="200">Medium (200 units)</option>
+                            <option value="1000">High (1000 units)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: row;">
+                        <h3>Anti-Aliasing</h3>
+                        <select
+                            id="aa_type"
+                        >
+                            <option value="disabled">Disabled</option>
+                            <option value="fxaa">FXAA</option>
+                            <!-- <option value="ssaa">SSAA</option> -->
+                            <option value="smaa">SMAA</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: row;">
+                        <h3>Material Quality</h3>
+                        <select
+                            id="material_quality"
+                        >
+                            <option value="highest">Highest (MeshStandardMaterial)</option>
+                            <option value="high">High (MeshPhongMaterial)</option>
+                            <option value="medium">Medium (MeshLambertMaterial)</option>
+                            <option value="lowest">Lowest (MeshBasicMaterial)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: row;">
+                        <h3>Animation Quality</h3>
+                        <select
+                            id="animation_quality"
+                        >
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low (Update every 8 frames)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: row;">
+                        <h3>Non-LOD Parametric Surface Samples</h3>
+                        <input 
+                            type="number"
+                            id="fixed_samples"
+                            value="0"
+                        />
+                    </div>
                     <h3>Level of Detail</h3>
                     <table>
                         <thead>
@@ -108,21 +165,88 @@
                         </thead>
                         <tbody>
                             <tr>
+                                <td>Trigger Distance</td>
+                                <td>
+                                    <input 
+                                        type="number"
+                                        id="lod_low_distance"
+                                        value="0"
+                                    />
+                                </td>
+                                <td>
+                                    <input 
+                                        type="number"
+                                        id="lod_medium_distance"
+                                        value="0"
+                                    />
+                                </td>
+                                <td>
+                                    <input 
+                                        type="number"
+                                        id="lod_high_distance"
+                                        value="0"
+                                    />
+                                </td>
+                            </tr>
+                            <tr>
                                 <td>Surface Samples</td>
-                                <td id="lod_low_surface_samples">4</td>
-                                <td id="lod_medium_surface_samples">4</td>
-                                <td id="lod_high_surface_samples">4</td>
+                                <td>
+                                    <input 
+                                        type="number"
+                                        id="lod_low_surface_samples"
+                                        value="0"
+                                    />
+                                </td>
+                                <td>
+                                    <input 
+                                        type="number"
+                                        id="lod_medium_surface_samples"
+                                        value="0"
+                                    />
+                                </td>
+                                <td>
+                                    <input 
+                                        type="number"
+                                        id="lod_high_surface_samples"
+                                        value="0"
+                                    />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Frames per Animation Update</td>
+                                <td>
+                                    <input 
+                                        type="number"
+                                        id="lod_low_animation_frames"
+                                        value="0"
+                                    />
+                                </td>
+                                <td>
+                                    <input 
+                                        type="number"
+                                        id="lod_medium_animation_frames"
+                                        value="0"
+                                    />
+                                </td>
+                                <td>
+                                    <input 
+                                        type="number"
+                                        id="lod_high_animation_frames"
+                                        value="0"
+                                    />
+                                </td>
                             </tr>
                         </tbody>
                     </table>
-                    <span>Level of Detail, Parametric Sample Resolution</span><br />
-                    <span>Animation Quality, Render Distance (Fog), Shadows</span><br />
-                    <span>Post Processing: Anti-aliasing (FXAA, SSAA, SMAA), Bloom, Ambient Occlusion</span>
                 </div>
                 <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem;">
                     <h2 style="font-weight: 600; font-size: x-large;">Additional Settings</h2>
                     <span>Network quality</span><br />
                 </div>
+                <button
+                    id="save_settings"
+                    onclick="javascript:setSettingsVisibility(false)"
+                >Save and Close Settings</button>
             </div>
         </div>
     </body>

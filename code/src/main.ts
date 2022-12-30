@@ -8,8 +8,9 @@ import { createBikeShed, createClassroom, createCorridor, createPond, createRigg
 import { ComponentRegister, RegisterableComponents } from './utils/registerable';
 import { BoxGeometry, Group, PlaneGeometry, Vector3 } from 'three';
 import { ModelLoader } from './utils/model_loader';
-import { defaultVisualSettings as visualSettings } from './utils/visual_quality';
+import { populateSettingDefaults, defaultVisualSettings as visualSettings, setupVisualQualityEvents } from './utils/visual_quality';
 
+populateSettingDefaults();
 
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
@@ -49,20 +50,18 @@ const getParametricLevels = () => {
 const parametricLODLevels = getParametricLevels();
 const registeredComponents = new ComponentRegister(parametricLODLevels);
 
+setupVisualQualityEvents(registeredComponents, camera, composedRenderer, scene);
+
 const updateLevelsOfDetail = (
-    low: {distance: number, samples: number, framesPerAnimationUpdate: number},
-    medium: {distance: number, samples: number, framesPerAnimationUpdate: number},
-    high: {distance: number, samples: number, framesPerAnimationUpdate: number}
+    low: {distance: number, samples: number},
+    medium: {distance: number, samples: number},
+    high: {distance: number, samples: number}
 ) => {
     visualSettings.levelsOfDetail.low = low;
     visualSettings.levelsOfDetail.medium = medium;
     visualSettings.levelsOfDetail.high = high;
     registeredComponents.lodSurfaceBinder.setLevels(getParametricLevels());
 }
-
-document.getElementById("low_quality")?.addEventListener("click", (event) => {
-    registeredComponents.updateFixedSampleCounts(1);
-})
 
 const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.Clock) => void> => {
     const gridMap = new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg");
@@ -131,11 +130,8 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     });
 
     const [treeMakerOwner, createNewTree] = await createTreeMaker(treeBillboardMaterial);
-    registeredComponents.addComponents({ qcAnimatedModels: [treeMakerOwner] });
-
     const riggedHumanMaker = await createRiggedHumanoid();
-    riggedHumanMaker.setAnimationLevel("high");
-
+    registeredComponents.addComponents({ qcAnimatedModels: [treeMakerOwner, riggedHumanMaker] });
 
     /** START OF OUTSIDE ROAD */
 
@@ -421,8 +417,10 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     /** END OF OUTSIDE FIELD */
 
     // INITIAL UPDATES
+    // TODO: These should be moved to the Visual Quality settings and synced with the defaults
     registeredComponents.setLODModelLevels([10, 20, 30]);
     registeredComponents.updateFixedSampleCounts(visualSettings.fixedSurfaceSamples);
+    registeredComponents.setAnimationQuality("medium")
 
     // setTimeout(() => registeredComponents.setLODModelLevels([60, 80, 100]), 2000)
     // setTimeout(() => updateLevelsOfDetail({ distance: 30, samples: 1 }, { distance: 20, samples: 4 }, { distance: 10, samples: 40 }), 1000)
