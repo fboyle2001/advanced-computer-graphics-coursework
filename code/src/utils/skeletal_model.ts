@@ -132,7 +132,7 @@ abstract class QCAnimatedModel {
     abstract updateAll(clock: Clock): void;
 }
 
-class SharedInverseAnimatedModel extends QCAnimatedModel {
+class InverseAnimatedModel extends QCAnimatedModel {
     baseSkeletal: SkeletalModel;
     ikTarget: SingleInverseKinematicSetup;
     animationLevels: {[level: string]: IKS};
@@ -201,20 +201,20 @@ class SharedInverseAnimatedModel extends QCAnimatedModel {
 
 class ForwardAnimatedModel extends QCAnimatedModel {
     baseSkeletal: SkeletalModel;
-    animationLevels: {[level: string]: {}};
+    animationLevels: {[level: string]: number};
     skinnedMeshes: SkinnedMesh[];
-    currentAnimationLevel: string;
+    framesPerUpdate!: number;
     baseObject!: Group;
     initialPoses: {[name: string]: (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel) => void};
     animations: {[name: string]: (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel, clock: Clock) => void}
     selectedAnimations: string[];
+    framesSinceLastUpdate: number;
 
-    constructor(skeletal: SkeletalModel, animationLevels: {[level: string]: {}}, defaultAnimationLevel: string) {
+    constructor(skeletal: SkeletalModel, animationLevels: {[level: string]: number}, initialAnimationLevel: string) {
         super();
         this.baseSkeletal = skeletal;
         this.animationLevels = animationLevels;
         this.skinnedMeshes = [];
-        this.currentAnimationLevel = defaultAnimationLevel;
         this.animations = {
             "disabled": (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel, clock: Clock) => {}
         };
@@ -223,6 +223,8 @@ class ForwardAnimatedModel extends QCAnimatedModel {
             "disabled": (skinnedMesh: SkinnedMesh, skeletalModel: SkeletalModel) => {}
         };
         this._createBaseObject();
+        this.setAnimationLevel(initialAnimationLevel);
+        this.framesSinceLastUpdate = 0;
     }
 
     addAnimation = (
@@ -235,7 +237,8 @@ class ForwardAnimatedModel extends QCAnimatedModel {
     }
 
     setAnimationLevel(level: string): void {
-        
+        this.framesPerUpdate = this.animationLevels[level];
+        this.framesSinceLastUpdate = 0;
     }
 
     _createBaseObject = () => {
@@ -272,6 +275,11 @@ class ForwardAnimatedModel extends QCAnimatedModel {
     }
 
     updateAll = (clock: Clock): void => {
+        if(this.framesSinceLastUpdate !== this.framesPerUpdate - 1) {
+            this.framesSinceLastUpdate++;
+            return;
+        }
+
         for(let i = 0; i < this.skinnedMeshes.length; i++) {
             if(!this.skinnedMeshes[i].visible) {
                 continue;
@@ -279,7 +287,9 @@ class ForwardAnimatedModel extends QCAnimatedModel {
 
             this.animations[this.selectedAnimations[i]](this.skinnedMeshes[i], this.baseSkeletal, clock); 
         }
+
+        this.framesSinceLastUpdate = 0;
     }
 }
 
-export { SkeletalModel, SharedInverseAnimatedModel, ForwardAnimatedModel, QCAnimatedModel };
+export { SkeletalModel, InverseAnimatedModel, ForwardAnimatedModel, QCAnimatedModel };

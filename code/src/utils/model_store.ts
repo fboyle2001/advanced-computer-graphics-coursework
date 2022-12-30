@@ -6,7 +6,7 @@ import { ProgressiveMesh } from "./progressive_mesh";
 import chairModelData from '../progressive_meshes/chair_50.json';
 import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
-import { SharedInverseAnimatedModel, SkeletalModel } from "./skeletal_model";
+import { InverseAnimatedModel, SkeletalModel } from "./skeletal_model";
 
 const initialLODs = {
     low: 30,
@@ -102,7 +102,7 @@ const createBillboarded = (faces: number, billboardMaterial: Material): Group =>
     return group;
 }
 
-const createTreeMaker = async (billboardMaterial: Material): Promise<[SharedInverseAnimatedModel, () => [LOD, RegisterableComponents]]> => {
+const createTreeMaker = async (billboardMaterial: Material): Promise<[InverseAnimatedModel, () => [LOD, RegisterableComponents]]> => {
     const billboarded = createBillboarded(2, billboardMaterial);
     const riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/r/rigged_2.glb");
 
@@ -118,7 +118,7 @@ const createTreeMaker = async (billboardMaterial: Material): Promise<[SharedInve
         return curveTwo(t - 1);
     }
 
-    const treeMaker = new SharedInverseAnimatedModel(
+    const treeMaker = new InverseAnimatedModel(
         riggedTree,
         {
             boneIndex: riggedTree.bone_map["BoneTarget"],

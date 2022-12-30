@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BoxGeometry, Clock, SkinnedMesh, Vector2, Vector3 } from 'three';
-import { SkeletalModel, SharedInverseAnimatedModel, ForwardAnimatedModel } from './utils/skeletal_model';
+import { SkeletalModel, InverseAnimatedModel, ForwardAnimatedModel } from './utils/skeletal_model';
 import { renderer, scene, camera, controls, stats, updateStatsDisplay } from './utils/three_setup';
 import { createCubicBezierCurve } from './utils/parametric_surfaces';
 import { createTreeMaker } from './utils/model_store';
@@ -38,7 +38,11 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     const [treeMaker, spawnNewTreeLOD] = await createTreeMaker(billboardMaterial);
 
     const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/rigged_basic_targets.glb");
-    const forwardKinematicModel = new ForwardAnimatedModel(riggedPerson, {low: {}}, "low");
+    const forwardKinematicModel = new ForwardAnimatedModel(riggedPerson, {
+        low: 8,
+        medium: 4,
+        high: 1
+    }, "low");
 
     console.log({h: riggedPerson.getSkeletonHierarchy()})
 
@@ -77,6 +81,9 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
 
     forwardKinematicModel.selectAnimation(0, "bounce");
     forwardKinematicModel.selectAnimation(1, "stretch-1");
+
+    setTimeout(() => forwardKinematicModel.setAnimationLevel("high"), 2500);
+    // setTimeout(() => forwardKinematicModel.setAnimationLevel("high"), 5000);
 
     // console.log({b: riggedPerson.getBoneNames(), h: riggedPerson.getSkeletonHierarchy()})
 
