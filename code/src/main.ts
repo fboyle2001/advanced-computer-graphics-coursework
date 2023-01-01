@@ -7,6 +7,7 @@ import { ComponentRegister } from './utils/registerable';
 import { BoxGeometry, Group, PlaneGeometry, Vector3 } from 'three';
 import { ModelLoader } from './utils/model_loader';
 import { setVisualQualityDefaults, defaultVisualSettings as visualSettings, setupVisualQualityEvents, dynamicQualityControl } from './utils/visual_quality';
+import { NURBSSurface } from './utils/parametric_surfaces';
 
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
@@ -366,7 +367,8 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     classroomTwo.position.set(45 - offset(), -0.1 + offset(), 100 - offset())
     scene.add(classroomTwo);
 
-    const corridor = await createCorridor(classroomRoofMaterial);
+    const [corridor, corridorComponents] = await createCorridor(classroomRoofMaterial);
+    registeredComponents.addComponents(corridorComponents);
     corridor.rotation.set(0, -Math.PI / 2, 0);
     corridor.position.set(20 + offset(), -0.1 + offset(), 100 - offset());
     scene.add(corridor);
@@ -443,7 +445,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         for(let j = 0; j < 2; j++) {
             const person = riggedHumanMaker.spawnObject();
             riggedHumanMaker.selectAnimation(4 + i * 2 + j, "stretch");
-            person.position.set(8 * i, 0, 2 * j)
+            person.position.set(8 * i, offset(), 2 * j)
             person.rotateY(((-1) ** i) * Math.PI / 2)
             stretchingPeopleGroup.add(person);
         }
@@ -484,6 +486,28 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** END OF OUTSIDE FIELD */
 
+    let earthquake = false;
+
+    // EARTHQUAKE SETUP
+    document.getElementById("earthquake_on")?.addEventListener("click", (event) => {
+        earthquake = !earthquake;
+    });
+
+    const earthquakeApplier = (elapsed: number, delta: number) => {
+        registeredComponents.fixedSurfaces.forEach(surface => {
+            if(surface instanceof NURBSSurface) {
+                const surfaceSize = Math.max(surface.control_points[surface.m - 1][surface.n - 1].x, surface.control_points[surface.m - 1][surface.n - 1].z);
+                
+                for(let i = 0; i < surface.m; i++) {
+                    for(let j = 0; j < surface.n; j++) {
+                        const oldPoint = surface.control_points[i][j];
+                        surface.updateControlPoint(i, j, new Vector3(oldPoint.x, (surfaceSize ** 0.5) * Math.random(), oldPoint.z))
+                    }
+                }
+            } 
+        })
+    }
+
     // INITIAL QUALITY SETTINGS
     setVisualQualityDefaults(registeredComponents, camera, composedRenderer, scene);
 
@@ -491,9 +515,14 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         const delta = clock.getDelta();
 
         registeredComponents.updateAll(clock, camera);
-        trampolineUpdate(clock.getElapsedTime())
-        pondUpdate(clock.getElapsedTime());
-        outsideFieldUpdate(clock.getElapsedTime());
+        if(earthquake) {
+            earthquakeApplier(clock.getElapsedTime(), delta);
+        } else {
+            trampolineUpdate(clock.getElapsedTime())
+            pondUpdate(clock.getElapsedTime());
+            outsideFieldUpdate(clock.getElapsedTime());
+        }
+
         updateHumanTrampolineHeight(clock);
         dynamicQualityControl(registeredComponents, camera, composedRenderer, scene, delta, clock.getElapsedTime());
     };

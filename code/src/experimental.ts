@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { BoxGeometry, Clock, SkinnedMesh, Vector2, Vector3 } from 'three';
 import { SkeletalModel, InverseAnimatedModel, ForwardAnimatedModel } from './utils/skeletal_model';
 import { renderer, scene, camera, controls, stats, updateStatsDisplay } from './utils/three_setup';
-import { createCubicBezierCurve } from './utils/parametric_surfaces';
 import { createTreeMaker } from './utils/model_store';
 
 /* CONFIGURATION */
@@ -35,54 +34,9 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         side: THREE.DoubleSide
     });
 
-    const [treeMaker, spawnNewTreeLOD] = await createTreeMaker(billboardMaterial);
+    const animationCurve = (t: number) => t % 2;
 
-    const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/rigged_basic_targets.glb");
-    const forwardKinematicModel = new ForwardAnimatedModel(riggedPerson, {
-        low: 8,
-        medium: 4,
-        high: 1
-    }, "low");
-
-    console.log({h: riggedPerson.getSkeletonHierarchy()})
-
-    forwardKinematicModel.addAnimation(
-        "stretch-1", 
-        (skinnedMesh: SkinnedMesh, skeletal: SkeletalModel) => {},
-        (skinnedMesh: SkinnedMesh, skeletal: SkeletalModel, clock: Clock) => {
-            skinnedMesh.skeleton.bones[skeletal.bone_map["spine001"]].rotation.set(0, Math.cos(clock.getElapsedTime()) * (Math.PI / 2 - 0.5), 0);
-        }
-    );
-
-    forwardKinematicModel.addAnimation(
-        "bounce", 
-        (skinnedMesh: SkinnedMesh, skeletal: SkeletalModel) => {
-            skinnedMesh.skeleton.bones[skeletal.bone_map["upper_armL"]].rotateZ(- Math.PI / 4);
-            skinnedMesh.skeleton.bones[skeletal.bone_map["forearmL"]].rotateZ(- Math.PI / 8);
-            skinnedMesh.skeleton.bones[skeletal.bone_map["forearmL"]].rotateX(Math.PI / 4);
-
-            skinnedMesh.skeleton.bones[skeletal.bone_map["upper_armR"]].rotateZ(Math.PI / 4);
-            skinnedMesh.skeleton.bones[skeletal.bone_map["forearmR"]].rotateZ(Math.PI / 8);
-            skinnedMesh.skeleton.bones[skeletal.bone_map["forearmR"]].rotateX(Math.PI / 4);
-        },
-        (skinnedMesh: SkinnedMesh, skeletal: SkeletalModel, clock: Clock) => {
-            skinnedMesh.skeleton.bones[skeletal.bone_map["thighL"]].scale.set(1, 1 - 0.3 * Math.abs(Math.cos(0.5 * clock.getElapsedTime())), 1);
-            skinnedMesh.skeleton.bones[skeletal.bone_map["thighR"]].scale.set(1, 1 - 0.3 * Math.abs(Math.cos(0.5 * clock.getElapsedTime())), 1);
-            const spineRotationX = Math.PI / 16 + (3 * Math.PI / 16) * Math.cos(clock.getElapsedTime())
-            skinnedMesh.skeleton.bones[skeletal.bone_map["spine001"]].rotation.setFromVector3(new Vector3(spineRotationX, 0, 0))
-        }
-    );
-
-    for(let i = 0; i < 5; i++) {
-        const dupe = forwardKinematicModel.spawnObject();
-        dupe.position.set(2 * i, 0, 0);
-        scene.add(dupe);
-    }
-
-    forwardKinematicModel.selectAnimation(0, "bounce");
-    forwardKinematicModel.selectAnimation(1, "stretch-1");
-
-    setTimeout(() => forwardKinematicModel.setAnimationLevel("high"), 2500);
+    
     // setTimeout(() => forwardKinematicModel.setAnimationLevel("high"), 5000);
 
     // console.log({b: riggedPerson.getBoneNames(), h: riggedPerson.getSkeletonHierarchy()})
@@ -94,14 +48,13 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     const clock = new THREE.Clock();
 
     return () => {
-        forwardKinematicModel.updateAll(clock);
         // riggedPerson.getBone("spine001").rotation.set(0, Math.cos(clock.getElapsedTime()) * (Math.PI / 2 - 0.5), 0); // 'Stretch animation'
     };
 }
 
 const animate = (updateScene: () => void) => {
     requestAnimationFrame(() => animate(updateScene));
-    // controls.update();
+    controls.update();
     renderer.render(scene, camera)
     stats.update();
     updateStatsDisplay();

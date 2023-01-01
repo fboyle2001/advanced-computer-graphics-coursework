@@ -207,14 +207,14 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material, 
     const tableWithChairs = new Group();
 
     const chairLeft = chairProgressiveMesh.createMesh(chairMaterial);
-    chairLeft.position.set(0, offset(), 0);
+    chairLeft.position.set(0, 0.01 + offset(), 0);
     const chairRight = chairProgressiveMesh.createMesh(chairMaterial);
-    chairRight.position.set(0, offset(), 0.8);
+    chairRight.position.set(0, 0.01 + offset(), 0.8);
     const table = tableLOD.clone();
-    table.position.set(0.9, offset(), -0.75);
+    table.position.set(0.9, 0.01 + offset(), -0.75);
 
     const computerLeft = computerLOD.clone();
-    computerLeft.position.set(0.77 * 1.7, 0.9 + offset(), -1.38);
+    computerLeft.position.set(0.77 * 1.7, 0.91 + offset(), -1.38);
     computerLeft.scale.set(2, 2, 2);
     computerLeft.rotation.y = Math.PI;
 
@@ -472,13 +472,23 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
     }];
 }
 
-const createCorridor = async (roofMaterial: Material): Promise<Group> => {
+const createCorridor = async (roofMaterial: Material): Promise<[Group, RegisterableComponents]> => {
     await corridorCreator.loadAndBlock()
+    const riggedWaving = await createIKRiggedHumanoid();
 
     const group = new Group();
     corridorCreator.addToScene(m => group.add(m));
 
-    return group;
+    for(let i = 0; i < 6; i++) {
+        const waver = riggedWaving.spawnObject();
+        waver.scale.set(2, 2, 2);
+        waver.position.set(10 * (i + 1), 0.01 + offset(), -5);
+        group.add(waver);
+    }
+
+    return [group, {
+        qcAnimatedModels: [riggedWaving]
+    }];
 }
 
 const createSportsField = (surfaceMaterial: Material): [Group, RegisterableComponents, (elapsed: number) => void] => {
@@ -561,14 +571,12 @@ const createSportsField = (surfaceMaterial: Material): [Group, RegisterableCompo
 }
 
 const createRiggedHumanoid = async (): Promise<ForwardAnimatedModel> => {
-    const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/coloured_rigged_packed.glb");
+    const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/coloured_rigged_targets.glb");
     const forwardKinematicModel = new ForwardAnimatedModel(riggedPerson, {
         low: 8,
         medium: 4,
         high: 1
     }, "low");
-
-    console.log({h: riggedPerson.getSkeletonHierarchy()})
 
     forwardKinematicModel.addAnimation(
         "stretch", 
@@ -604,9 +612,55 @@ const createRiggedHumanoid = async (): Promise<ForwardAnimatedModel> => {
             }
         );
     }
-    
 
     return forwardKinematicModel;
+}
+
+const createIKRiggedHumanoid = async (): Promise<InverseAnimatedModel> => {
+    const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/coloured_rigged_targets.glb");
+
+    const personIK = new InverseAnimatedModel(
+        riggedPerson,
+        {
+            boneIndex: riggedPerson.bone_map["handR_target_1"],
+            target: (clock: THREE.Clock): THREE.Vector3 => {
+                const t = clock.getElapsedTime() % Math.PI;
+                const s = 0.8;
+                const x = -0.8 * (1 + Math.sin(s * t));
+                const y = 0.8 * (1 + Math.cos(s * t));
+                return new Vector3(0.4 * x, 0.5 + 0.4 * y, 0);
+            }
+        },
+        {
+            low: {
+                "effector": 14,
+                "iteration": 1,
+                // @ts-ignore
+                "links": [{index: 13}], 
+                "maxAngle": 0.005,
+                "target": 30
+            },
+            medium: {
+                "effector": 14,
+                "iteration": 5,
+                // @ts-ignore
+                "links": [{index: 13}, {index: 12}], 
+                "maxAngle": 0.0025,
+                "target": 30
+            },
+            high: {
+                "effector": 14,
+                "iteration": 1,
+                // @ts-ignore
+                "links": [{index: 13}, {index: 12}, {index: 11}], 
+                "maxAngle": 0.001,
+                "target": 30
+            },
+        },
+        "low"
+    );
+
+    return personIK;
 }
 
 export { 
