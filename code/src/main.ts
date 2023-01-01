@@ -12,10 +12,12 @@ const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
 /* BASIC MATERIALS */
 const purpleMaterial = new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THREE.DoubleSide });
-const brownMaterial = new THREE.MeshBasicMaterial({ color: 0x9e9378, side: THREE.DoubleSide });
+const brownMaterial = new THREE.MeshBasicMaterial({ color: 0x9d7c5d, side: THREE.DoubleSide });
 const blueMaterial = new THREE.MeshBasicMaterial({ color: 0x268cab, side: THREE.DoubleSide });
 const redMaterial = new THREE.MeshBasicMaterial({ color: 0x910c00, side: THREE.DoubleSide });
-const greenMaterial = new THREE.MeshBasicMaterial({ color: 0x239140, side: THREE.DoubleSide });
+const greyMaterial = new THREE.MeshBasicMaterial({ color: 0x404040, side: THREE.DoubleSide });
+const lightGreyMaterial = new THREE.MeshBasicMaterial({ color: 0x808080, side: THREE.DoubleSide });
+const wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x808080, side: THREE.DoubleSide, wireframe: true });
 
 const composedRenderer = new EffectComposer(renderer);
 const primaryRenderPass = new RenderPass(scene, camera);
@@ -75,7 +77,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     const bikeShedPavementMap = new THREE.TextureLoader().load("/textures/bike_shed.png");
     bikeShedPavementMap.wrapS = bikeShedPavementMap.wrapT = THREE.RepeatWrapping;
-    bikeShedPavementMap.repeat.set(1, 2)
+    bikeShedPavementMap.repeat.set(1, 8)
     bikeShedPavementMap.anisotropy = 16;
 
     const bikeShedPavementMaterial = new THREE.MeshStandardMaterial({
@@ -104,10 +106,89 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const treeBillboardTexture = new THREE.TextureLoader().load("/textures/tree_billboard.png");
     treeBillboardTexture.encoding =THREE.sRGBEncoding;
 
-    const treeBillboardMaterial = new THREE.MeshPhongMaterial({
+    const treeBillboardMaterial = new THREE.MeshBasicMaterial({
         map: treeBillboardTexture,
         transparent: true,
         depthTest: true,
+        side: THREE.DoubleSide
+    });
+
+    const grassMap = new THREE.TextureLoader().load("/textures/grass.jpg");
+    grassMap.wrapS = grassMap.wrapT = THREE.RepeatWrapping;
+    grassMap.repeat.set(8, 8)
+    grassMap.anisotropy = 16;
+
+    const grassTexture = new THREE.MeshStandardMaterial({
+        map: grassMap,
+        side: THREE.DoubleSide
+    });
+
+    const dirtMap = new THREE.TextureLoader().load("/textures/dirt.jpg");
+    dirtMap.wrapS = dirtMap.wrapT = THREE.RepeatWrapping;
+    dirtMap.repeat.set(8, 8)
+    dirtMap.anisotropy = 16;
+
+    const dirtTexture = new THREE.MeshStandardMaterial({
+        map: dirtMap,
+        side: THREE.DoubleSide
+    });
+
+    const longDirtMap = dirtMap.clone();
+    longDirtMap.repeat.set(16, 64);
+
+    const dirtTextureLong = new THREE.MeshStandardMaterial({
+        map: longDirtMap,
+        side: THREE.DoubleSide
+    });
+
+    const roadMap = new THREE.TextureLoader().load("/textures/road.png");
+    roadMap.wrapS = roadMap.wrapT = THREE.RepeatWrapping;
+    roadMap.repeat.set(8, 1)
+    roadMap.anisotropy = 16;
+
+    const roadTexture = new THREE.MeshStandardMaterial({
+        map: roadMap,
+        side: THREE.DoubleSide
+    });
+
+    const waterMap = new THREE.TextureLoader().load("/textures/water.jpg");
+    waterMap.wrapS = waterMap.wrapT = THREE.RepeatWrapping;
+    waterMap.repeat.set(8, 8)
+    waterMap.anisotropy = 16;
+    waterMap.encoding = THREE.sRGBEncoding;
+
+    const waterTexture = new THREE.MeshStandardMaterial({
+        map: waterMap,
+        side: THREE.DoubleSide
+    });
+
+    const trampolineMap = new THREE.TextureLoader().load("/textures/trampoline.jpg");
+    trampolineMap.wrapS = trampolineMap.wrapT = THREE.RepeatWrapping;
+    trampolineMap.repeat.set(2, 2)
+    trampolineMap.anisotropy = 16;
+    trampolineMap.encoding = THREE.sRGBEncoding;
+
+    const trampolineTexture = new THREE.MeshStandardMaterial({
+        map: trampolineMap,
+        side: THREE.DoubleSide
+    });
+
+    const gravelMap = new THREE.TextureLoader().load("/textures/gravel.jpg");
+    gravelMap.wrapS = gravelMap.wrapT = THREE.RepeatWrapping;
+    gravelMap.repeat.set(6, 6)
+    gravelMap.anisotropy = 16;
+    gravelMap.encoding = THREE.sRGBEncoding;
+
+    const gravelTexture = new THREE.MeshStandardMaterial({
+        map: gravelMap,
+        side: THREE.DoubleSide
+    });
+
+    const longGravelMap = gravelMap.clone();
+    longGravelMap.repeat.set(2, 16);
+
+    const gravelTextureLong = new THREE.MeshStandardMaterial({
+        map: longGravelMap,
         side: THREE.DoubleSide
     });
 
@@ -119,17 +200,17 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** START OF OUTSIDE ROAD */
 
-    const outsideRoadPlane = new THREE.Mesh(new PlaneGeometry(200, 15), redMaterial);
+    const outsideRoadPlane = new THREE.Mesh(new PlaneGeometry(200, 15), roadTexture);
     outsideRoadPlane.rotation.x = -Math.PI / 2;
     outsideRoadPlane.position.add(new Vector3(23, -offset(), -10));
     scene.add(outsideRoadPlane);
 
-    const innerJunctionPlane = new THREE.Mesh(new PlaneGeometry(10, 2.5), blueMaterial);
+    const innerJunctionPlane = new THREE.Mesh(new PlaneGeometry(10, 2.5), greyMaterial);
     innerJunctionPlane.rotation.x = -Math.PI / 2;
     innerJunctionPlane.position.add(new Vector3(23, -offset(), -1.25));
     scene.add(innerJunctionPlane);
 
-    const longPavement = new THREE.Mesh(new BoxGeometry(95, 0.6, 2.5), purpleMaterial);
+    const longPavement = new THREE.Mesh(new BoxGeometry(95, 0.6, 2.5), lightGreyMaterial);
     longPavement.position.add(new Vector3(-29.5, 0.3 - offset(), -1.25));
     scene.add(longPavement);
 
@@ -137,7 +218,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     reflectedLongPavement.position.add(new Vector3(95 + 10, 0, 0));
     scene.add(reflectedLongPavement);
 
-    const otherSideLongPavement = new THREE.Mesh(new BoxGeometry(200, 0.6, 2.5), purpleMaterial);
+    const otherSideLongPavement = new THREE.Mesh(new BoxGeometry(200, 0.6, 2.5), lightGreyMaterial);
     otherSideLongPavement.position.add(new Vector3(23, 0.3 - offset(), -1.25-15-2.5));
     scene.add(otherSideLongPavement);    
 
@@ -155,7 +236,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const bikeShedCount = 3;
 
     for(let i = 0; i < bikeShedCount; i++) {
-        const [bikeShed, registerable] = createBikeShed(visualSettings.fixedSurfaceSamples, woodenPanelMaterial, brownMaterial, purpleMaterial);
+        const [bikeShed, registerable] = createBikeShed(visualSettings.fixedSurfaceSamples, classroomRoofMaterial, brownMaterial, woodenPanelMaterial);
         let size = new Vector3();
         new THREE.Box3().setFromObject(bikeShed).getSize(size);
         bikeShed.position.add(new Vector3(0, 0.6 + offset(), (size.z + 0.2) * i));
@@ -188,11 +269,11 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         });
     }
 
-    const carParkPavement = new THREE.Mesh(new BoxGeometry(26.25, 4.0, 2.5), blueMaterial);
+    const carParkPavement = new THREE.Mesh(new BoxGeometry(26.25, 4.0, 2.5), lightGreyMaterial);
     carParkPavement.position.add(new Vector3(13.125, -1.4 - offset(), 31.25));
     scene.add(carParkPavement);
 
-    const carParkTreePlane = new THREE.Mesh(new PlaneGeometry(20, 30), greenMaterial);
+    const carParkTreePlane = new THREE.Mesh(new PlaneGeometry(20, 30), dirtTexture);
     carParkTreePlane.rotation.x = -Math.PI / 2;
     carParkTreePlane.position.set(48, offset(), 15);
 
@@ -214,13 +295,13 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     carParkTreePlane.add(carParkTreeGroup);
     scene.add(carParkTreePlane);
 
-    const longCarParkTreePlane = new THREE.Mesh(new PlaneGeometry(20, 240), greenMaterial);
-    longCarParkTreePlane.rotation.x = -Math.PI / 2;
-    longCarParkTreePlane.position.set(-10, offset(), 120)
+    const longCarParkTreePlane = new THREE.Mesh(new BoxGeometry(20, 4.0, 240), dirtTextureLong);
+    // longCarParkTreePlane.rotation.x = -Math.PI / 2;
+    longCarParkTreePlane.position.set(-10, -1.4 - offset(), 120)
 
     const longCarParkTreeGroup = new THREE.Group();
-    longCarParkTreeGroup.rotation.x = Math.PI / 2;
-    longCarParkTreeGroup.position.set(-5, 115, 7);
+    // longCarParkTreeGroup.rotation.x = Math.PI / 2;
+    longCarParkTreeGroup.position.set(-5, 8, -115);
 
     for(let i = 0; i < 2; i++) {
         for(let j = 0; j < 24; j++) {
@@ -249,20 +330,20 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** START OF ENTRANCE */
 
-    const entrancePlane = new THREE.Mesh(new PlaneGeometry(5.5, 30), purpleMaterial);
+    const entrancePlane = new THREE.Mesh(new PlaneGeometry(5.5, 30), greyMaterial);
     entrancePlane.rotation.x = -Math.PI / 2;
     entrancePlane.position.set(31.25, -offset(), 45);
     scene.add(entrancePlane);
 
-    const entrancePavement = new THREE.Mesh(new BoxGeometry(2.5, 4.0, 30), redMaterial);
-    entrancePavement.position.add(new Vector3(27.5,-1.4 - offset(), 45));
+    const entrancePavement = new THREE.Mesh(new BoxGeometry(2.5, 4.0, 30), lightGreyMaterial);
+    entrancePavement.position.add(new Vector3(27.5, -1.4 - offset(), 45));
     scene.add(entrancePavement);
 
     /** END OF ENTRANCE */
 
     /** START OF PLAYGROUND */
 
-    const playgroundPlane = new THREE.Mesh(new PlaneGeometry(40, 40), brownMaterial);
+    const playgroundPlane = new THREE.Mesh(new PlaneGeometry(40, 40), gravelTexture);
     playgroundPlane.rotation.x = -Math.PI / 2;
     playgroundPlane.position.set(40, -offset(), 80);
     scene.add(playgroundPlane);
@@ -314,7 +395,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     scene.add(sportsHallBuilding);
 
     const trampolineGroup = new Group();
-    const [trampoline, trampolineComponents, trampolineUpdate] = await createTrampoline(gridMaterial);
+    const [trampoline, trampolineComponents, trampolineUpdate] = await createTrampoline(trampolineTexture);
     registeredComponents.addComponents(trampolineComponents);
 
     trampolineGroup.add(trampoline);
@@ -378,12 +459,12 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** START OF POND */
 
-    const [pond, pondComponents, pondUpdate] = createPond(gridMaterial);
+    const [pond, pondComponents, pondUpdate] = createPond(waterTexture);
     pond.position.add(new Vector3(0, -0.4 + offset(), 32.5))
     registeredComponents.addComponents(pondComponents)
     scene.add(pond);
 
-    const pondPavement = new THREE.Mesh(new BoxGeometry(26.25, 4.0, 2.5), purpleMaterial);
+    const pondPavement = new THREE.Mesh(new BoxGeometry(26.25, 4.0, 2.5), lightGreyMaterial);
     pondPavement.position.add(new Vector3(13.125, -1.4 - offset(), 60 - 1.25));
     scene.add(pondPavement); 
 
@@ -391,12 +472,12 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** START OF OUTSIDE FIELD */
 
-    const outsideFieldPath = new THREE.Mesh(new PlaneGeometry(20, 110), redMaterial);
+    const outsideFieldPath = new THREE.Mesh(new PlaneGeometry(20, 110), gravelTextureLong);
     outsideFieldPath.position.set(10, -offset(), 60 + 110/2);
     outsideFieldPath.rotation.x = -Math.PI / 2;
     scene.add(outsideFieldPath);
 
-    const [outsideFieldSurface, outsideFieldComponents, outsideFieldUpdate] = createSportsField(gridMaterial);
+    const [outsideFieldSurface, outsideFieldComponents, outsideFieldUpdate] = createSportsField(grassTexture);
     registeredComponents.addComponents(outsideFieldComponents);
     outsideFieldSurface.position.set(0, -offset(), 170);
     scene.add(outsideFieldSurface);

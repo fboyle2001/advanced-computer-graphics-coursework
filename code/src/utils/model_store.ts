@@ -1,4 +1,4 @@
-import { BufferGeometry, DoubleSide, FrontSide, Group, LOD, Material, Mesh, MeshBasicMaterial, MeshPhongMaterial, PlaneGeometry, sRGBEncoding, TextureLoader, Vector2, Vector3, Vector4 } from "three";
+import { BufferAttribute, BufferGeometry, DoubleSide, Float32BufferAttribute, Float64BufferAttribute, FrontSide, Group, LOD, Material, Mesh, MeshBasicMaterial, MeshPhongMaterial, Plane, PlaneGeometry, sRGBEncoding, TextureLoader, Triangle, Vector2, Vector3, Vector4 } from "three";
 import { ModelLoader } from "./model_loader";
 import { BezierSurface, BSplineSurface, createCubicBezierCurve, NURBSSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
@@ -7,6 +7,8 @@ import chairModelData from '../progressive_meshes/chair_packed_reduced.json';
 import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
 import { ForwardAnimatedModel, InverseAnimatedModel, SkeletalModel } from "./skeletal_model";
+
+import { Water } from 'three/examples/jsm/objects/Water2';
 
 const initialLODs = {
     low: 30,
@@ -56,8 +58,12 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
         sideMaterial
     );
 
+    const triangleGeom = new BufferGeometry();
+    triangleGeom.setAttribute("position", new Float32BufferAttribute(new Float32Array([0, 0, 0, 4, 4, 0, 4, 0, 0]), 3))
+    triangleGeom.setIndex(new BufferAttribute(new Uint16Array([0, 1, 2]), 1));
+
     const triangleFill = new Mesh(
-        new BufferGeometry().setFromPoints([new Vector3(0, 0, 0), new Vector3(4, 4, 0), new Vector3(4, 0, 0)]), 
+        triangleGeom, 
         sideMaterial
     );
 
@@ -68,32 +74,26 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
     const otherSide = new Group(); 
     const otherCurvedSection = new BezierSurface(
         [
-            [new Vector3(0, 0, 0), new Vector3(0, 4, 0), new Vector3(4, 4, 0)],
-            [new Vector3(4, 4, 0), new Vector3(0, 4, 0), new Vector3(0, 0, 0)]
+            [new Vector3(0, 0, 8), new Vector3(0, 4, 8), new Vector3(4, 4, 8)],
+            [new Vector3(4, 4, 8), new Vector3(0, 4, 8), new Vector3(0, 0, 8)]
         ],
         samples,
         sideMaterial
     );
 
     const otherTriangleFill = new Mesh(
-        new BufferGeometry().setFromPoints([new Vector3(0, 0, 0), new Vector3(4, 4, 0), new Vector3(4, 0, 0)]), 
+        new BufferGeometry().setFromPoints([new Vector3(0, 0, 8), new Vector3(4, 4, 8), new Vector3(4, 0, 8)]), 
         sideMaterial
     );
     
     otherSide.add(otherCurvedSection.mesh);
     otherSide.add(otherTriangleFill);
-    otherSide.position.set(0, 0, 8);
     group.add(otherSide);
 
-    const floor = new Mesh(
-        new BufferGeometry().setFromPoints(
-            [
-                new Vector3(0, 0, 0), new Vector3(4, 0, 0), new Vector3(4, 0, 8),
-                new Vector3(4, 0, 8), new Vector3(0, 0, 8), new Vector3(0, 0, 0)
-            ]
-        ),
-        floorMaterial
-    )
+    const floor = new Mesh(new PlaneGeometry(4, 8), floorMaterial);
+    floor.rotation.x = Math.PI / 2
+    floor.position.set(2, 0, 4)
+
     group.add(floor);
 
     return [group, {
@@ -454,6 +454,7 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
     const samples = 40;
 
     const pondSurface = new NURBSSurface(nsControlPoints, p, q, U, V, samples, surfaceMaterial, 0.5);
+
     group.add(pondSurface.mesh);
     group.add(pondSurface.control_point_grid);
 
