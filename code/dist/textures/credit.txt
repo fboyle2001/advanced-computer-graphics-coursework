@@ -1,5 +1,0 @@
-skybox.png: 
-gravel.jpg: https://architextures.org/textures/587
-
-"Tree Billboard Test" (https://skfb.ly/oq8EE) by fangzhangmnm is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
-"Tree Animate" (https://skfb.ly/oy78T) by RandyGF is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).

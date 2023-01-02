@@ -1,3 +1,4 @@
+## This code was used for experimentation - see code/src/utils/parametric_surfaces.ts for the final implementation
 # Mostly derived from lecture slides
 # Surface plotting and general numpy changes to original are from https://stackoverflow.com/q/72154002
 

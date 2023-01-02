@@ -41,6 +41,7 @@ class OBJModel:
                 print(f"===Iteration {i + 1}===")
                 print(f"Polygons: {len(self.graph.compute_all_polygons())}")
 
+            # Use quadric error
             res = self.graph.determine_preferred_collapsible_edge()
 
             if not res:
@@ -48,6 +49,7 @@ class OBJModel:
 
             x, y = res
 
+            # Collapse and record
             x_coords, y_coords = self.graph.index_data[x].coords, self.graph.index_data[y].coords
             x_polygons = set([tuple(z["polygon"]) for z in self.graph.compute_polygons(x).values()])
             y_polygons = set([tuple(z["polygon"]) for z in self.graph.compute_polygons(y).values()])
@@ -237,6 +239,8 @@ def process_obj_file(file_name: str) -> OBJModel:
     return OBJModel(file_name, graph, preserved_headers, reduction_records, original_index_map)
 
 def write_obj_file(obj_model: OBJModel, write_reduction_records: bool) -> str:
+    # Write to a valid .obj file and include the reduction data in a comment for parsing
+    
     current_time = time.time()
     initial_line = "# REDUCTION_V1_LEN_0"
 

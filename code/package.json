@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "main": "webpack serve --config ./webpack.config.js",
-    "experimental": "webpack serve --config ./webpack.experimental.config.js --port 8081",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "chpf93",

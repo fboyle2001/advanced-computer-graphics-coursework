@@ -1,3 +1,5 @@
+## This code was used for experimentation - see code/src/utils/parametric_surfaces.ts for the final implementation
+
 from dataclasses import dataclass
 
 @dataclass

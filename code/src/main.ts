@@ -4,11 +4,13 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { createBikeShed, createClassroom, createCorridor, createPond, createRiggedHumanoid, createSphere, createSportsField, createSportsHall, createTrampoline, createTreeMaker } from './utils/model_store';
 import { ComponentRegister } from './utils/registerable';
+// Commonly used items
 import { BoxGeometry, Group, PlaneGeometry, Vector3 } from 'three';
 import { ModelLoader } from './utils/model_loader';
 import { setVisualQualityDefaults, defaultVisualSettings as visualSettings, setupVisualQualityEvents, dynamicQualityControl } from './utils/visual_quality';
 import { NURBSSurface } from './utils/parametric_surfaces';
 
+// Prevent clipping
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
 /* BASIC MATERIALS */
@@ -43,10 +45,13 @@ const getParametricLevels = () => {
 const parametricLODLevels = getParametricLevels();
 const registeredComponents = new ComponentRegister(parametricLODLevels);
 
+// Use the visual quality settings
 setupVisualQualityEvents(registeredComponents, camera, composedRenderer, scene);
 
+// Build the scene
 const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.Clock) => void> => {
-    const gridMap = new THREE.TextureLoader().load("https://threejs.org/examples/textures/uv_grid_opengl.jpg");
+    /** CREATE MATERIALS AND TEXTURES **/
+    const gridMap = new THREE.TextureLoader().load("textures/uv_grid_opengl.jpg");
     gridMap.wrapS = gridMap.wrapT = THREE.RepeatWrapping;
     gridMap.anisotropy = 16;
 
@@ -548,10 +553,15 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     // INITIAL QUALITY SETTINGS
     setVisualQualityDefaults(registeredComponents, camera, composedRenderer, scene);
 
+    // Runs every frame
     return (clock: THREE.Clock) => {
+        // Call once otherwise we get 0
         const delta = clock.getDelta();
 
+        // Step animations, surface LoDs etc. (everything basically!)
         registeredComponents.updateAll(clock, camera);
+
+        // Update NURBS control points
         if(earthquake) {
             earthquakeApplier(clock.getElapsedTime(), delta);
         } else {
@@ -560,16 +570,19 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
             outsideFieldUpdate(clock.getElapsedTime());
         }
 
+        // Update trampoline people
         updateHumanTrampolineHeight(clock);
+        // Run the dynamic visual settings changer if enabled
         dynamicQualityControl(registeredComponents, camera, composedRenderer, scene, delta, clock.getElapsedTime());
     };
 }
 
+// Used for calculating elapsed and delta time
 const clock = new THREE.Clock()
 
+// Main loop
 const animate = (sceneUpdate: (clock: THREE.Clock) => void) => {
     requestAnimationFrame(() => animate(sceneUpdate))
-    // controls.update(clock.getDelta());
     controls.update()
     composedRenderer.render();
     stats.update();
@@ -577,4 +590,5 @@ const animate = (sceneUpdate: (clock: THREE.Clock) => void) => {
     sceneUpdate(clock);
 }
 
+// Create the scene and then run!
 constructInitialScene(scene).then(sceneUpdate => animate(sceneUpdate));

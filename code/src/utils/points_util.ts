@@ -1,5 +1,7 @@
 import { BufferGeometry, Mesh, Points, PointsMaterial, Vector3 } from "three";
 
+// Old method was used for testing surfaces when I was initially working on them
+// Visualises the position of the points of an arbitrary mesh
 const createPointMesh = (objectMesh: Mesh, pointSize: number): Points => {
     const pos = objectMesh.geometry.attributes.position;
     let points = [];

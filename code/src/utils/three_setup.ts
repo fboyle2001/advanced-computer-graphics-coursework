@@ -3,13 +3,14 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FlyControls } from 'three/examples/jsm/controls/FlyControls';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 import Stats from 'three/examples/jsm/libs/stats.module';
-import { CCDIKSolver } from 'three/examples/jsm/animation/CCDIKSolver';
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+// Anti-aliasing is applied by post-processing instead
+const renderer = new THREE.WebGLRenderer({ powerPreference: "high-performance" });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
+// Initialise stats
 const stats = Stats();
 document.body.appendChild(stats.dom);
 
@@ -25,101 +26,24 @@ const camera = new THREE.PerspectiveCamera(
     1000
 );
 
+camera.position.x = -8
 camera.position.y = 5;
-camera.position.z = 2;
+camera.position.z = 0;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// controls.addEventListener("change", event => console.log({pos: controls.object.position, rot: controls.object.rotation}))
-
-// const controls = new PointerLockControls(camera, renderer.domElement);
-// controls.isLocked = false;
-
-// const controlMovement = () => {
-//     let moveForward = false;
-//     let moveBackward = false;
-//     let moveLeft = false;
-//     let moveRight = false;
-//     let canJump = false;
-
-//     const velocity = new THREE.Vector3();
-// 	const direction = new THREE.Vector3();
-
-//     const onKeyDown = function ( event: any ) {
-//         switch ( event.code ) {
-//             case 'ArrowUp':
-//             case 'KeyW':
-//                 controls.moveForward(1)
-//                 moveForward = true;
-//                 break;
-//             case 'ArrowLeft':
-//             case 'KeyA':
-//                 controls.moveRight(-1)
-//                 moveLeft = true;
-//                 break;
-//             case 'ArrowDown':
-//             case 'KeyS':
-//                 controls.moveForward(-1)
-//                 moveBackward = true;
-//                 break;
-//             case 'ArrowRight':
-//             case 'KeyD':
-//                 controls.moveRight(1)
-//                 moveRight = true;
-//                 break;
-//             case 'Space':
-//                 if ( canJump === true ) velocity.y += 350;
-//                 canJump = false;
-//                 break;
-//         }
-//     };
-
-//     const onKeyUp = function ( event: any ) {
-
-//         switch ( event.code ) {
-//             case 'ArrowUp':
-//             case 'KeyW':
-//                 moveForward = false;
-//                 break;
-//             case 'ArrowLeft':
-//             case 'KeyA':
-//                 moveLeft = false;
-//                 break;
-//             case 'ArrowDown':
-//             case 'KeyS':
-//                 moveBackward = false;
-//                 break;
-//             case 'ArrowRight':
-//             case 'KeyD':
-//                 moveRight = false;
-//                 break;
-
-//         }
-//     };
-
-//     document.addEventListener( 'keydown', onKeyDown );
-// 	document.addEventListener( 'keyup', onKeyUp );
-//     controls.isLocked = true;
-// }
-
-// controlMovement();
-
-// const controls = new FlyControls(camera, renderer.domElement);
-// controls.movementSpeed = 1;
-// controls.autoForward = false;d
-// controls.dragToLook = false;
-// controls.rollSpeed = Math.PI;
-
+// Load the skybox
 const skyboxLoader = new THREE.TextureLoader();
 const texture = skyboxLoader.load(
     "/textures/skybox.png", () => {
-        const rt = new THREE.WebGLCubeRenderTarget(texture.image.height);
-        rt.fromEquirectangularTexture(renderer, texture);
-        scene.background = rt.texture;
+        const skybox = new THREE.WebGLCubeRenderTarget(texture.image.height);
+        skybox.fromEquirectangularTexture(renderer, texture);
+        scene.background = skybox.texture;
     }
 );
 
+// Respond to resizing
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -127,6 +51,7 @@ window.addEventListener('resize', () => {
     renderer.render(scene, camera);
 }, false);
 
+// More precise, low-level stats for debugging
 const updateStatsDisplay = () => {
     if(document.getElementById("polygon_count") !== null) {
         (document.getElementById("polygon_count") as HTMLElement).innerHTML = `${renderer.info.render.triangles}`;

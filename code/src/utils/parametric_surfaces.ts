@@ -1,12 +1,24 @@
-import { BufferGeometry, Camera, Material, Mesh, Object3D, PerspectiveCamera, Points, PointsMaterial, Vector2, Vector3, Vector4 } from "three";
+import { BufferGeometry, Material, Mesh, PerspectiveCamera, Points, PointsMaterial, Vector2, Vector3, Vector4 } from "three";
 import { ParametricGeometry } from "three/examples/jsm/geometries/ParametricGeometry";
 import { binomial } from "./binomial_coeff";
-import { Registerable, RegisterableComponents } from "./registerable";
+import { Registerable } from "./registerable";
 
+/*
+ * Defines Bezier Surface, B-Spline Surfaces and NURBS Surfaces
+ * References:
+ * Lecture 5 - Parametric Surfaces
+ * https://pages.mtu.edu/~shene/COURSES/cs3621/NOTES/spline/B-spline/bspline-basis.html 
+ * https://pages.mtu.edu/~shene/COURSES/cs3621/NOTES/surface/bspline-construct.html 
+ * https://pages.mtu.edu/~shene/COURSES/cs3621/NOTES/spline/NURBS/NURBS-def.html
+ */
+
+// The basis of Bezier curves, see https://en.wikipedia.org/wiki/Bernstein_polynomial
 const bernsteinBasis = (n: number, i: number): ((t: number) => number) => {
     return (t: number) => binomial(n, i) * (t ** i) * ((1 - t) ** (n - i));
 }
 
+// Parent class so that we can update them easily via the Visual Quality Settings 
+// Maintain the mesh directly for the same reason
 abstract class ParametricSurface extends Registerable {
     abstract samples: number;
     abstract mesh: Mesh;
@@ -15,6 +27,7 @@ abstract class ParametricSurface extends Registerable {
     abstract calculateSurfacePoint(u: number, v: number): Vector3;
     abstract updateSampleCount(samples: number): void;
     abstract _createGeometry(samples: number): ParametricGeometry;
+    // Useful to visualise the control point positions
     abstract _generateControlPointGrid(): void;
 
     getComponents = () => {
@@ -24,6 +37,7 @@ abstract class ParametricSurface extends Registerable {
     }
 }
 
+// Defines a Bezier Surface given arbitrary control points 
 class BezierSurface extends ParametricSurface {
     control_points: Vector3[][];
     m: number;
@@ -44,6 +58,7 @@ class BezierSurface extends ParametricSurface {
         this.m = control_points.length;
         this.m_basis = [];
 
+        // Precompute the basis functions
         for(let i = 0; i < this.m; i++) {
             this.m_basis.push(bernsteinBasis(this.m - 1, i));
         }
@@ -51,6 +66,7 @@ class BezierSurface extends ParametricSurface {
         this.n = control_points[0].length;
         this.n_basis = [];
 
+        // Precompute the basis functions
         for(let j = 0; j < this.n; j++) {
             this.n_basis.push(bernsteinBasis(this.n - 1, j));
         }
@@ -63,6 +79,8 @@ class BezierSurface extends ParametricSurface {
     calculateSurfacePoint = (u: number, v: number): Vector3 => {
         let point = new Vector3(0, 0, 0);
 
+        // Compute the point at given (u, v) coords 
+        // Needed for the Three.js Parametric Geometry
         for(let i = 0; i < this.m; i++) {
             for(let j = 0; j < this.n; j++) {
                 const uv_scale = this.m_basis[i](u) * this.n_basis[j](v);
@@ -104,12 +122,17 @@ class BezierSurface extends ParametricSurface {
     }
 }
 
+// Recursive defintion of the B-Spline Basis Functions
+// See https://en.wikipedia.org/wiki/B-spline#Definition
+// See https://pages.mtu.edu/~shene/COURSES/cs3621/NOTES/spline/B-spline/bspline-basis.html
 const bSplineBasis = (i: number, p: number, U: number[]): ((u: number) => number) => {
     const basis = (i: number, p: number, u: number): number => {
+        // Base case
         if(p == 0) {
             return U[i] <= u && u <= U[i + 1] ? 1 : 0;
         }
 
+        // If denominator is 0 then set the value to 0
         const left = U[i + p] - U[i] != 0 ? ((u - U[i]) / (U[i + p] - U[i])) * bSplineBasis(i, p - 1, U)(u) : 0;
         const right = U[i + p + 1] - U[i + 1] != 0 ? ((U[i + p + 1] - u) / (U[i + p + 1] - U[i + 1])) * bSplineBasis(i + 1, p - 1, U)(u) : 0;
         return left + right;
@@ -118,6 +141,7 @@ const bSplineBasis = (i: number, p: number, U: number[]): ((u: number) => number
     return (u: number) => basis(i, p, u);
 }
 
+// Defines a B-Spline Surface given arbitrary control points
 class BSplineSurface extends ParametricSurface {
     control_points: Vector3[][];
     m: number;
@@ -135,6 +159,7 @@ class BSplineSurface extends ParametricSurface {
         this.control_points = control_points;
         this.m = control_points.length;
         this.n = control_points[0].length;
+        // Precompute the basis functions
         this.u_basis = [...Array(this.m).keys()].map(i => bSplineBasis(i, p, U));
         this.v_basis = [...Array(this.n).keys()].map(j => bSplineBasis(j, q, V));
         this.samples = samples;
@@ -164,6 +189,7 @@ class BSplineSurface extends ParametricSurface {
         return point;
     }
 
+    // Specification for the ParametricGeometry class provided by Three.js
     _calculateSurfacePoint = (u: number, v: number, target: Vector3): void => {
         let point = this.calculateSurfacePoint(u, v);
         target.set(point.x, point.y, point.z);
@@ -187,11 +213,13 @@ class BSplineSurface extends ParametricSurface {
     }
 }
 
+// Used for storing computations for incremental updating
 interface NURBSIntermediateComputation {
     uv_scales: number[][], // per control point
     denom: number // overall
 }
 
+// Defines a Non-Uniform Rational B-Spline Surface
 class NURBSSurface extends ParametricSurface {
     control_points: Vector4[][];
     m: number;
@@ -210,9 +238,11 @@ class NURBSSurface extends ParametricSurface {
         this.control_points = control_points;
         this.m = control_points.length;
         this.n = control_points[0].length;
+        // Precompute the basis functions
         this.u_basis = [...Array(this.m).keys()].map(i => bSplineBasis(i, p, U));
         this.v_basis = [...Array(this.n).keys()].map(j => bSplineBasis(j, q, V));
         this.samples = samples;
+        // Reset each time the number of samples changes
         this._resetStored();
         this.mesh = new Mesh(this._createGeometry(this.samples), material);
         this.control_point_size = control_point_size ?? 0.2;
@@ -258,6 +288,7 @@ class NURBSSurface extends ParametricSurface {
             uv_scales.push(i_uv_scales);
         }
 
+        // Save the contribution at the (u, v) coordinates
         this.stored_computation[u_idx][v_idx] = { uv_scales, denom };
         return point.divideScalar(denom);
     }
@@ -283,7 +314,7 @@ class NURBSSurface extends ParametricSurface {
     updateControlPoint = (row: number, column: number, updated_point: Vector3, incremental: boolean = true): void => {
         // Incremental update is O((samples + 1) ** 2) ~= O(s^2)
         // Non-incremental update is O(m * n * (samples + 1) ** 2) ~= O(mns^2) > O(s^2)
-        // Incremental actually uses less space because we aren't maintaining two geometries but updating one
+        // Incremental may use less space because we aren't maintaining two geometries but updating one
 
         // Do not allow changes to the control point weights otherwise we need to recompute a new geometry every time
         // Easy to implement this in the future if I want it
@@ -310,6 +341,7 @@ class NURBSSurface extends ParametricSurface {
                 const { uv_scales, denom } = this.stored_computation[u_idx][v_idx];
                 const uv_scale = uv_scales[row][column];
                 
+                // Update the geometry position buffer directly for speed
                 this.mesh.geometry.attributes.position.setXYZ(
                     posIdx,
                     this.mesh.geometry.attributes.position.getX(posIdx) + xDiff * uv_scale / denom,
@@ -319,12 +351,15 @@ class NURBSSurface extends ParametricSurface {
             }
         }
 
+        // Tell the renderer the geometry has changed
         this.mesh.geometry.attributes.position.needsUpdate = true;
         this.control_points[row][column] = weighted_point;
+        // Recompute the control point grid
         this._generateControlPointGrid();
     }
 }
 
+// Makes updating the quality of the surfaces easy!
 class LODParametricBinder {
     boundSurfaces: ParametricSurface[];
     levels!: {[distance: number]: number};
@@ -335,15 +370,18 @@ class LODParametricBinder {
         this.setLevels(levels);
     }
 
+    // Update the levels
     setLevels(levels: {[distance: number]: number}) {
         this.levels = levels;
         this.numericLevelKeys = Object.keys(this.levels).map(level => Number(level)).sort((a, b) => a - b);
     }
 
+    // Register a surface so it can be updated automatically
     bindSurface(surface: ParametricSurface) {
         this.boundSurfaces.push(surface);
     }
 
+    // Run every frame, computes level of detail and if it should change
     updateAll(camera: PerspectiveCamera) {
         const cameraPosition = new Vector3().setFromMatrixPosition(camera.matrixWorld);
 
@@ -368,6 +406,8 @@ class LODParametricBinder {
     }
 }
 
+// Defines a cubic Bezier curve from 4 control points, used for parametric curves rather than surfaces
+// e.g. with skeletal animations to define bone paths
 const createCubicBezierCurve = (p_0: Vector2, p_1: Vector2, p_2: Vector2, p_3: Vector2): ((t: number) => number) => {
     const a = p_0.y;
     const b = p_1.y;

@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import { BufferGeometry, Material } from 'three';
 import { Logger } from './logger';
 
+// Data stored about a specific vertex
 interface VertexData {
     name: string,
     coords: number[]
 }
 
+// The edge collapse record used to reconstruct the mesh
 interface ReductionRecord {
     i: number;
     mName: string;
@@ -17,15 +19,20 @@ interface ReductionRecord {
     polygons: string[][];
 }
 
+// Defines the reconstruction process of an edge-collapsed mesh
 class ProgressiveMesh {
+    // We predefine these to prevent resizing the geometry which is very costly (and laggy!)
     vertexLimit: number;
     polygonLimit: number;
     reductionData: ReductionRecord[];
+    // Map vertex names to vertex buffer indices
     vertexIndexMap: {[key: string]: number};
     nextVertexIndex: number;
     nextFaceIndex: number;
+    // Repurpose old indices so we can use a fixed memory space
     reusableVertexIndices: number[];
     reusableFaceIndices: number[];
+    // The geometry representing the current state of the vertex and edge reconstruction
     geometry: BufferGeometry;
 
     constructor(
@@ -42,9 +49,11 @@ class ProgressiveMesh {
         this.polygonLimit = max_faces;
         this.reductionData = reductionData;
 
+        // Needed as we are working at a lower level
         const vertices = new Float32Array(this.vertexLimit * 3);
         const faces = new Uint16Array(this.polygonLimit * 3);
 
+        // Manually prepare the geometry
         this.geometry = new BufferGeometry(); 
         this.geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
         this.geometry.setIndex(new THREE.BufferAttribute(faces, 1));
@@ -53,6 +62,7 @@ class ProgressiveMesh {
         let vertexIndex: number = 0;
         let positions = this.geometry.attributes.position;
 
+        // Build the base mesh from the input data
         for (const vertexData of initial_vertices) {
             const [x, y, z] = vertexData.coords;
             this.vertexIndexMap[vertexData.name] = vertexIndex;
@@ -64,6 +74,7 @@ class ProgressiveMesh {
 
         let indices = this.geometry.index;
 
+        // Should not occur indicates an issue with the progressive mesh
         if(indices === null) {
             console.error("Null indices");
             this.nextFaceIndex = 0;
@@ -82,18 +93,20 @@ class ProgressiveMesh {
 
         this.nextFaceIndex = polygonIndex;
 
-        //@ts-ignore
-        this.geometry.index.needsUpdate = true;
+        // Update the geometry
+        this.geometry.index!.needsUpdate = true;
         this.geometry.attributes.position.needsUpdate = true;
         this.geometry.computeBoundingBox();
         this.geometry.computeBoundingSphere();
         this.geometry.computeVertexNormals();
     }
 
+    // Spawn a mesh using the shared geometry
+    // Allows updates to the geometry to automatically propagate
     createMesh(material: Material) {
         return new THREE.Mesh(this.geometry, material);
     }
-
+    
     addToReductionBuffer(record: ReductionRecord, stepImmediately: boolean = true) {
         this.reductionData.push(record);
 
@@ -102,6 +115,10 @@ class ProgressiveMesh {
         }
     }
 
+    // Start the reconstruction process
+    // Instead of downloading via the Internet (unreliable for coursework)
+    // this uses the data from a .json file and has a fixed delay between each step
+    // Called at registerable.ts:50 once per Progressive Mesh
     simulateNetworkDataArrival(delayPerStep: number) {
         const takeStep = () => {
             if(!this.reductionData || this.reductionData.length === 0) {
@@ -129,6 +146,7 @@ class ProgressiveMesh {
         takeStep();
     }
 
+    // Create a new vertex
     addNewVertex(name: string, x: number, y: number, z: number) {
         let vertexIndex: number = this.nextVertexIndex;
 
@@ -143,6 +161,7 @@ class ProgressiveMesh {
         this.geometry.attributes.position.setXYZ(vertexIndex, x, y, z);
     }
 
+    // Process a single record
     stepMesh(): boolean {
         if(this.reductionData.length === 0) {
             return false;
@@ -155,6 +174,7 @@ class ProgressiveMesh {
         }
 
         const { mName, xName, xCoords, yName, yCoords, polygons } = record;
+        // Split this vertex
         const deletionVertexIndex = this.vertexIndexMap[mName];
 
         // Delete the old vertex
@@ -174,6 +194,7 @@ class ProgressiveMesh {
             return false;
         }
         
+        // Delete and free up the neighbouring indices based on its position in the array
         for(let i = 0; i < indices.array.length; i++) {
             if(indices.array[i] == deletionVertexIndex) {
                 if(i % 3 === 0) {
@@ -219,7 +240,10 @@ class ProgressiveMesh {
         this.geometry.computeBoundingSphere();
         this.geometry.computeVertexNormals();
 
+        // Debug
         Logger.writeLine(`Completed iteration ${record.i}`);
+        
+        // Are we done?
         return this.reductionData.length !== 0;
     }
 }

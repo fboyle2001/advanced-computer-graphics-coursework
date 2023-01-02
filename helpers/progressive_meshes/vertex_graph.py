@@ -147,6 +147,7 @@ class VertexGraph:
             # a, b, c = normal_vec
             plane_vec = np.asmatrix(np.append(normal_vec, d)).T
 
+            # Compute the Q matrix
             K_p = plane_vec @ plane_vec.T
             Q_matrix += K_p
 

@@ -1,3 +1,5 @@
+## This code was used for experimentation - see code/src/utils/parametric_surfaces.ts for the final implementation
+
 import numpy as np
 import math
 import matplotlib.pyplot as plt

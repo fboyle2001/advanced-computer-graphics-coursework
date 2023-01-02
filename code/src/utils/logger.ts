@@ -1,3 +1,5 @@
+// Class used for debugging results
+// Outputs to a HTML element, disabled in main build
 class Logger {
     private static loggerHTMLElement: HTMLElement = document.getElementById("log_output") as HTMLElement;
 

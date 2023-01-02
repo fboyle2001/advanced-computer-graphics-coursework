@@ -1,6 +1,6 @@
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
+// Ensures the models are loaded correctly when they are added to the scene
 const defaultPostLoad = (model: THREE.Group): void => {
     model.traverse(child => {
         // @ts-ignore
@@ -15,6 +15,8 @@ const defaultPostLoad = (model: THREE.Group): void => {
     });
 }
 
+// Abstracts away the code required to load a model
+// Handles GLTF and GLB files
 class ModelLoader {
     scene: THREE.Scene | null;
     loaded: boolean;
@@ -42,7 +44,8 @@ class ModelLoader {
         if(this.loaded) {
             return;
         }
-
+        
+        // Load without blocking
         switch(this.type) {
             case "glb":
             case "gltf":
@@ -65,6 +68,7 @@ class ModelLoader {
         this.loaded = true;
     }
 
+    // Often necessary due to issues with cloning before objects are fully loaded
     async loadAndBlock(): Promise<THREE.Group> {
         if(this.loaded) {
             console.log("already")
@@ -87,6 +91,7 @@ class ModelLoader {
         this.postLoad(model);
         this.object = model;
 
+        // If we tried to add to the scene before it was loaded the calls are buffered
         this.load_positions.forEach(callback => {
             if(!this.object) {
                 return;
@@ -101,6 +106,8 @@ class ModelLoader {
         return model;
     }
 
+    // Adds the model to scene, safer than accessing the model directly
+    // Ensures the model is loaded
     addToScene(postAdd: (model: THREE.Group) => void): void {
         if(!this.loaded || !this.object) {
             this.load_positions.push(postAdd);
@@ -110,12 +117,6 @@ class ModelLoader {
         const instance = this.object.clone();
         this.scene?.add(instance);
         postAdd(instance);
-    }
-
-    addToSceneSynchronous() {
-        if(!this.loaded) {
-            throw new Error("Model needs to be loaded first");
-        }
     }
 }
 

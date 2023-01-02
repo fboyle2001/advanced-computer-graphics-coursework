@@ -7,6 +7,12 @@ import { GlitchPass } from "three/examples/jsm/postprocessing/GlitchPass";
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
 import { ComponentRegister } from "./registerable";
 
+/*
+ * Handles the visual quality settings panel and propagates changes to the settings
+ * to both the GUI and the rendering output
+ */
+
+// Storage format of the settings
 interface VisualSettingsStore {
     antialiasing: string,
     renderDistance: string,
@@ -31,6 +37,7 @@ interface VisualSettingsStore {
     }
 }
 
+// Default settings
 const defaultVisualSettings: VisualSettingsStore = {
     antialiasing: "disabled",
     renderDistance: "1000",
@@ -55,13 +62,19 @@ const defaultVisualSettings: VisualSettingsStore = {
     }
 }
 
+// Make a direct copy without any references
 let currentVisualSettings: VisualSettingsStore = JSON.parse(JSON.stringify(defaultVisualSettings));
+// Used to apply different Anti-Aliasing effects
 let currentAAPass: SMAAPass | SSAARenderPass | ShaderPass | GlitchPass | null = null;
 
+// Settings for dynamic control
+// In real use, dynamicDelay = 2.0 worked well but 0.2 works well for demos
 const maxRunningSize = 32;
 const dynamicDelay = 0.2;
 let dynamicPaused = false;
+// Maintain a running average to prevent one poor frame causing major changes
 let runningAverageFPS: number[] = [];
+// Don't run every frame
 let lastUpdateTime = 0;
 
 const updateSettings = (
@@ -179,6 +192,7 @@ const updateSettings = (
     }
 }
 
+// Register events for user input
 const setupVisualQualityEvents = (
     componentRegister: ComponentRegister, 
     camera: PerspectiveCamera, 
@@ -195,6 +209,8 @@ const setupVisualQualityEvents = (
     })
 }
 
+// Update the GUI and then we can use these values to update the rendering
+// Ensures consistency between GUI and actual values
 const setVisualQualitySettings = (
     componentRegister: ComponentRegister, 
     camera: PerspectiveCamera, 
@@ -222,6 +238,7 @@ const setVisualQualitySettings = (
     updateSettings(componentRegister, camera, composedRenderer, scene)
 }
 
+// Load the defaults
 const setVisualQualityDefaults = (
     componentRegister: ComponentRegister, 
     camera: PerspectiveCamera, 
@@ -231,6 +248,7 @@ const setVisualQualityDefaults = (
     setVisualQualitySettings(componentRegister, camera, composedRenderer, scene, defaultVisualSettings);
 }
 
+// Single incremental step
 const incrementalQualityIncrease = () => {
     const { 
         antialiasing, 
@@ -240,6 +258,8 @@ const incrementalQualityIncrease = () => {
         levelsOfDetail
     } = currentVisualSettings;
     const renderDistance = Number(renderDistanceStr);
+
+    // Make changes in a sequential order to make sure they are not too detrimental
 
     if(renderDistance < 200) {
         currentVisualSettings.renderDistance = "" + (renderDistance + 10);
@@ -267,6 +287,8 @@ const incrementalQualityIncrease = () => {
     }
 
     let affectedLod = false;
+
+    // Increase progressively
 
     if(levelsOfDetail.high.samples < 24) {
         currentVisualSettings.levelsOfDetail.high.samples += 4;
@@ -298,6 +320,7 @@ const incrementalQualityIncrease = () => {
     }
 }
 
+// Downgrade one setting at a time so we can hone in on the target FPS
 const incrementalQualityDowngrade = () => {
     const { 
         antialiasing, 
@@ -373,14 +396,18 @@ const dynamicQualityControl = (
     deltaTime: number, 
     elapsedTime: number
 ) => {
+    // Only run if enabled and the settings menu is closed
     if(!currentVisualSettings.dynamicControl || dynamicPaused) {
         return;
     }
 
+    // Maintain a fixed size list
     while(runningAverageFPS.length >= maxRunningSize) {
         runningAverageFPS.shift()
     }
 
+    // Current FPS may differ to the stats.js module
+    // they don't provide an interface so use the THREE.Clock instead
     const currentFPS = 1 / deltaTime;
     runningAverageFPS.push(currentFPS);
 
@@ -389,6 +416,7 @@ const dynamicQualityControl = (
         return;
     }
 
+    // Only update every so often
     if(elapsedTime - lastUpdateTime < dynamicDelay) {
         return;
     }
@@ -398,7 +426,7 @@ const dynamicQualityControl = (
     const averageFPS = runningAverageFPS.reduce((a, b) => a + b, 0) / runningAverageFPS.length;
     const lowerVarianceBound = currentVisualSettings.targetFPS * 0.98;
     const upperVarianceBound = currentVisualSettings.targetFPS * 1.05;
-
+    
     // Make changes in response to too little or too much FPS to tend to the target FPS
     if(averageFPS < lowerVarianceBound) {
         incrementalQualityDowngrade();
@@ -415,7 +443,5 @@ const dynamicQualityControl = (
     // Clear the running average
     runningAverageFPS = [];
 }
-
-console.log({currentVisualSettings})
 
 export { setVisualQualityDefaults, setupVisualQualityEvents, dynamicQualityControl, defaultVisualSettings };

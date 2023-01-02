@@ -1,14 +1,17 @@
-import { BufferAttribute, BufferGeometry, DoubleSide, Float32BufferAttribute, Float64BufferAttribute, FrontSide, Group, LOD, Material, Mesh, MeshBasicMaterial, MeshPhongMaterial, Plane, PlaneGeometry, sRGBEncoding, TextureLoader, Triangle, Vector2, Vector3, Vector4 } from "three";
+import { BufferAttribute, BufferGeometry, Float32BufferAttribute, Group, LOD, Material, Mesh, PlaneGeometry, Vector2, Vector3, Vector4 } from "three";
 import { ModelLoader } from "./model_loader";
 import { BezierSurface, BSplineSurface, createCubicBezierCurve, NURBSSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
-
 import chairModelData from '../progressive_meshes/chair_50.json';
 import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
 import { ForwardAnimatedModel, InverseAnimatedModel, SkeletalModel } from "./skeletal_model";
 
-import { Water } from 'three/examples/jsm/objects/Water2';
+/*
+ * This class acts as a store for loading and preparing models
+ * Some models are also created on the fly using Three.js geometries
+ * Hides the code from the scene creation to avoid clogging up what is happening
+ */
 
 const initialLODs = {
     low: 30,
@@ -16,16 +19,21 @@ const initialLODs = {
     high: 10
 }
 
+// Used to prevent clipping
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
+// Reuse imported models
 const classroomCreator = new ModelLoader(null, `models/custom/classroom/roofless/packed.gltf`);
 const trampolineEdgeCreator = new ModelLoader(null, `models/custom/trampoline/model.gltf`);
 const sportsHallCreator = new ModelLoader(null, `models/custom/sports_hall/packed.gltf`);
 const corridorCreator = new ModelLoader(null, `models/custom/corridor/model.gltf`);
 
+// Reuse LODs
 let tableLOD: LOD | null = null;
 let computerLOD: LOD | null = null;
 
+// Reuse the Progressive Mesh objects so we only have to maintain 1 geometry instead of n
+// Creates a large efficiency saving
 const chairProgressiveMesh = new ProgressiveMesh(
     chairModelData.vertices, 
     chairModelData.polygons, 
@@ -34,9 +42,11 @@ const chairProgressiveMesh = new ProgressiveMesh(
     chairModelData.reduction
 );
 
+// Bike shed
 const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: Material, floorMaterial: Material): [Group, RegisterableComponents] => {
     const group = new Group();
 
+    // Create parametric surface directly
     const curvedRoof = new BezierSurface(
         [
             [new Vector3(0, 0, 0), new Vector3(0, 4, 0), new Vector3(4, 4, 0)],
@@ -58,6 +68,7 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
         sideMaterial
     );
 
+    // Manually create a triangle using WebGL buffers
     const triangleGeom = new BufferGeometry();
     triangleGeom.setAttribute("position", new Float32BufferAttribute(new Float32Array([0, 0, 0, 4, 4, 0, 4, 0, 0]), 3))
     triangleGeom.setIndex(new BufferAttribute(new Uint16Array([0, 1, 2]), 1));
@@ -81,6 +92,7 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
         sideMaterial
     );
 
+    // Create a triangle section directly from points in the scene
     const otherTriangleFill = new Mesh(
         new BufferGeometry().setFromPoints([new Vector3(0, 0, 8), new Vector3(4, 4, 8), new Vector3(4, 0, 8)]), 
         sideMaterial
@@ -96,14 +108,18 @@ const createBikeShed = (samples: number, roofMaterial: Material, sideMaterial: M
 
     group.add(floor);
 
+    // Returns the object and its component for easy visual quality control
     return [group, {
         lodSurfaces: [curvedRoof, curvedSection, otherCurvedSection]
     }];
 }
 
+// Billboarding, used for trees
 const createBillboarded = (faces: number, billboardMaterial: Material): Group => {
     const group = new Group();
 
+    // Rotate in place and place a plane in place
+    // 417:216 is the pixel ratio of the tree texture
     for(let i = 0; i < faces; i++) {
         const otherFace = new Mesh(new PlaneGeometry(4, 4 * 417/216), billboardMaterial);
         otherFace.rotateY(i * Math.PI / faces)
@@ -113,10 +129,13 @@ const createBillboarded = (faces: number, billboardMaterial: Material): Group =>
     return group;
 }
 
+// Returns a function to produce Level of Detail trees while reusing textures and geometries
 const createTreeMaker = async (billboardMaterial: Material): Promise<[InverseAnimatedModel, () => [LOD, RegisterableComponents]]> => {
     const billboarded = createBillboarded(2, billboardMaterial);
+    // Load the rigged model into a custom class to handle rigged meshes
     const riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/rigged.glb");
 
+    // Create the G1 parametric curve for the bone target's motion
     const curveOne = createCubicBezierCurve(new Vector2(0, 0), new Vector2(0.3, 0.2), new Vector2(0.7, 1.2), new Vector2(1, 0.7))
     const curveTwo = createCubicBezierCurve(new Vector2(1, 0.7), new Vector2(1.3, 0.2), new Vector2(1.7, -0.1), new Vector2(2, 0))
     const animationCurve = (_t: number) => {
@@ -129,6 +148,8 @@ const createTreeMaker = async (billboardMaterial: Material): Promise<[InverseAni
         return curveTwo(t - 1);
     }
 
+    // Prepare the animated trees
+    // Different animation levels correspond to Inverse Kinematic settings
     const treeMaker = new InverseAnimatedModel(
         riggedTree,
         {
@@ -179,6 +200,7 @@ const createTreeMaker = async (billboardMaterial: Material): Promise<[InverseAni
     ];
 }
 
+// Creates a classroom, adds its roof and all of the tables and chairs inside
 const createClassroom = async (chairMaterial: Material, roofMaterial: Material, registerPM?: boolean): Promise<[Group, RegisterableComponents]> => {
     // Table LOD
     if(!tableLOD) {
@@ -192,6 +214,7 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material, 
     tableLOD.rotation.y = Math.PI;
     tableLOD.position.set(3, 0, 4);
 
+    // Computer
     if(!computerLOD) {
         computerLOD = await createLevelOfDetail({
             distances: initialLODs,
@@ -204,8 +227,10 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material, 
         await classroomCreator.loadAndBlock();
     }
 
+    // Group for easier duplication
     const tableWithChairs = new Group();
 
+    // Create a new mesh using the base geometry, good for efficiency
     const chairLeft = chairProgressiveMesh.createMesh(chairMaterial);
     chairLeft.position.set(0, 0.01 + offset(), 0);
     const chairRight = chairProgressiveMesh.createMesh(chairMaterial);
@@ -226,7 +251,8 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material, 
     tableWithChairs.rotation.y = Math.PI;
 
     const classroomWithTables = new Group();
-
+    
+    // Manually position within the classroom
     const tablePositions = [
         [4.25, offset(), -1.25], [4.25, offset(), -3.75], [4.25, offset(), -6.25],
         [2.75, offset(), -1.25], [2.75, offset(), -3.75], [2.75, offset(), -6.25]
@@ -248,6 +274,7 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material, 
         classroomWithTables.add(m);
     });
 
+    // The room is a NURBS surface
     const nsControlPoints = [
         [
             new Vector4( 0, 0, 0, 1 ),
@@ -281,12 +308,14 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material, 
     const q = 3;
     const samples = 40;
 
+    // Construct the surface
     const roofNURBS = new NURBSSurface(nsControlPoints, p, q, U, V, samples, roofMaterial);
     roofNURBS.mesh.position.set(0, 2.665 + offset(), -10)
     classroomWithTables.add(roofNURBS.mesh);
     roofNURBS.control_point_grid.position.set(0, 2.665 + offset(), -10)
     classroomWithTables.add(roofNURBS.control_point_grid)
 
+    // Only register the progressive mesh for the first classroom otherwise we get unexpected results
     const prgs = registerPM ? [chairProgressiveMesh] : [];
 
     return [classroomWithTables, {
@@ -296,14 +325,18 @@ const createClassroom = async (chairMaterial: Material, roofMaterial: Material, 
     }];
 }
 
+// Creates the trampoline with its NURBS surface
 const createTrampoline = async (surfaceMaterial: Material): Promise<[Group, RegisterableComponents, (elapsed: number) => void]> => {
     await trampolineEdgeCreator.loadAndBlock();
 
     const group = new Group();
+
+    // The trampoline edge is a model I created in Sketchup
     trampolineEdgeCreator.addToScene(m => {
         group.add(m);
     });
 
+    // Define the surface with weighted points
     const nsControlPoints = [
         [
             new Vector4( 0, 0, 0, 0.8 ),
@@ -345,6 +378,7 @@ const createTrampoline = async (surfaceMaterial: Material): Promise<[Group, Regi
     const bounceFactor = 1.1;
     const bounceDepth = 0.3;
 
+    // Define the function that moves the surface, uses parametric curves (in terms of cos [rather than Bezier] with a period of pi)
     return [group, {
         fixedSurfaces: [bouncySurface]
     }, (elapsed) => {
@@ -355,6 +389,7 @@ const createTrampoline = async (surfaceMaterial: Material): Promise<[Group, Regi
     }];
 }
 
+// Creates the sports hall containing the trampoline
 const createSportsHall = async (roofMaterial: Material): Promise<[Group, RegisterableComponents]> => {
     await sportsHallCreator.loadAndBlock();
     const group = new Group();
@@ -364,6 +399,7 @@ const createSportsHall = async (roofMaterial: Material): Promise<[Group, Registe
     const b = -1;
     const c = -0.6;
 
+    // Has a B-Spline roof
     let roofControlPoints = [
         [new Vector3(0, a, 0), new Vector3(3.528, b, 0), new Vector3(7.056, c, 0), new Vector3(10.584, c, 0), new Vector3(14.112, b, 0), new Vector3(17.64, a, 0)],
         [new Vector3(0, b, 6), new Vector3(3.528, 0, 6), new Vector3(7.056, 0, 6), new Vector3(10.584, 0, 6), new Vector3(14.112, 0, 6), new Vector3(17.64, b, 6)],
@@ -392,6 +428,7 @@ const createSportsHall = async (roofMaterial: Material): Promise<[Group, Registe
     }];
 }
 
+// Creates the pond surface
 const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, (elapsed: number) => void] => {
     const group = new Group();
 
@@ -460,6 +497,7 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
 
     let incremental = true;
 
+    // Used to show the effect in the video where the NURBS Surface is not incrementally updated
     // document.addEventListener("keydown", e => {
     //     console.log(e.key)
     //     if(e.key == "o") {
@@ -467,6 +505,9 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
     //     }
     // })
 
+    // Defines the function to move the control points to create a wave effect
+    // Again this is a parametric curve defined in terms of the control point grid positions
+    // Points are moved according to their distance from opposite corners
     return [group, {
         fixedSurfaces: [pondSurface]
     }, (elapsed) => {
@@ -481,6 +522,7 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
     }];
 }
 
+// Creates the corridor and the people waving inside
 const createCorridor = async (roofMaterial: Material): Promise<[Group, RegisterableComponents]> => {
     await corridorCreator.loadAndBlock()
     const riggedWaving = await createIKRiggedHumanoid();
@@ -488,7 +530,8 @@ const createCorridor = async (roofMaterial: Material): Promise<[Group, Registera
     const group = new Group();
     corridorCreator.addToScene(m => group.add(m));
 
-    for(let i = 0; i < 6; i++) {
+    // Evenly space the waving people
+    for(let i = 0; i < 6; i++) { 
         const waver = riggedWaving.spawnObject();
         waver.scale.set(2, 2, 2);
         waver.position.set(10 * (i + 1), 0.01 + offset(), -5);
@@ -500,6 +543,7 @@ const createCorridor = async (roofMaterial: Material): Promise<[Group, Registera
     }];
 }
 
+// Creates the sports field with the NURBS surface for the earthquake
 const createSportsField = (surfaceMaterial: Material): [Group, RegisterableComponents, (elapsed: number) => void] => {
     const group = new Group();
 
@@ -579,6 +623,7 @@ const createSportsField = (surfaceMaterial: Material): [Group, RegisterableCompo
     }];
 }
 
+// Creates the forward kinematic rigged human
 const createRiggedHumanoid = async (): Promise<ForwardAnimatedModel> => {
     const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/coloured_rigged_targets.glb");
     const forwardKinematicModel = new ForwardAnimatedModel(riggedPerson, {
@@ -587,6 +632,7 @@ const createRiggedHumanoid = async (): Promise<ForwardAnimatedModel> => {
         high: 1
     }, "low");
 
+    // Define the 'stretch' animation - see the people in the sports hall not on the trampoline
     forwardKinematicModel.addAnimation(
         "stretch", 
         (skinnedMesh: THREE.SkinnedMesh, skeletal: SkeletalModel) => {},
@@ -597,6 +643,8 @@ const createRiggedHumanoid = async (): Promise<ForwardAnimatedModel> => {
 
     const bounceSpeed = Math.PI;
 
+    // Define the bounce animation, offset so that they sync with the trampoline surface deformation
+    // More parametric defintions, see the Desmos graphs in the video
     for(let i = 0; i < 4; i++) {
         const offset = i / 4;
 
@@ -625,9 +673,11 @@ const createRiggedHumanoid = async (): Promise<ForwardAnimatedModel> => {
     return forwardKinematicModel;
 }
 
+// Create the waving people, they are IK rigged
 const createIKRiggedHumanoid = async (): Promise<InverseAnimatedModel> => {
     const riggedPerson = await SkeletalModel.createSkeletalModel("models/custom/basic_humanoid/coloured_rigged_targets.glb");
 
+    // Animation quality = Inverse Kinematic parameters
     const personIK = new InverseAnimatedModel(
         riggedPerson,
         {
@@ -672,8 +722,10 @@ const createIKRiggedHumanoid = async (): Promise<InverseAnimatedModel> => {
     return personIK;
 }
 
+// Create a sphere using my implemented NURBS surface and points from a paper 
 const createSphere = (material: Material): [Group, NURBSSurface] => {
     // Reference: https://www.geometrictools.com/Documentation/NURBSCircleSphere.pdf
+    // Defines how to create the Sphere (control points and knots vectors)
 
     const controlPoints = [
         [new Vector4(0, 0, 1, 1), new Vector4(0, 0, 1, 1/3), new Vector4(0, 0, 1, 1/3), new Vector4(0, 0, 1, 1), new Vector4(0, 0, 1, 1/3), new Vector4(0, 0, 1, 1/3), new Vector4(0, 0, 1, 1)],
