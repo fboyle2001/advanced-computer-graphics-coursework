@@ -3,7 +3,7 @@ import { BoxGeometry, Clock, SkinnedMesh, Vector2, Vector3, Vector4 } from 'thre
 import { SkeletalModel, InverseAnimatedModel, ForwardAnimatedModel } from './utils/skeletal_model';
 import { renderer, scene, camera, controls, stats, updateStatsDisplay } from './utils/three_setup';
 import { createTreeMaker } from './utils/model_store';
-import { BezierSurface, BSplineSurface, NURBSSurface } from './utils/parametric_surfaces';
+import { BezierSurface, BSplineSurface, createCubicBezierCurve, NURBSSurface } from './utils/parametric_surfaces';
 
 /* CONFIGURATION */
 // Config this to simulate network arrival
@@ -48,7 +48,7 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
         gridMaterial
     )
 
-    scene.add(surf.mesh);
+    // scene.add(surf.mesh);
 
     // const control_points = [
     //     [new Vector3(2.0, 8.0, 1.0), new Vector3(2.5, 7.8, 2.0), new Vector3(3.0, 7.6, 3.0), new Vector3(4.0, 7.4, 4.0), new Vector3(5.2, 7.1, 5.0), new Vector3(4.8, 6.9, 6.0)],
@@ -76,7 +76,64 @@ const constructScene = async (scene: THREE.Scene): Promise<() => void> => {
     // const b = new BezierSurface(controlPoints, 40, gridMaterial);
     // scene.add(b.mesh)
 
+    const riggedTree = await SkeletalModel.createSkeletalModel("models/external/rigged_pine/rigged.glb");
+
+    const curveOne = createCubicBezierCurve(new Vector2(0, 0), new Vector2(0.3, 0.2), new Vector2(0.7, 1.2), new Vector2(1, 0.7))
+    const curveTwo = createCubicBezierCurve(new Vector2(1, 0.7), new Vector2(1.3, 0.2), new Vector2(1.7, -0.1), new Vector2(2, 0))
+    const animationCurve = (_t: number) => {
+        const t = _t % 2;
+
+        if(t < 1) {
+            return curveOne(t);
+        }
+
+        return curveTwo(t - 1);
+    }
+
+    const treeMaker = new InverseAnimatedModel(
+        riggedTree,
+        {
+            boneIndex: riggedTree.bone_map["BoneTarget"],
+            target: (clock: THREE.Clock): THREE.Vector3 => {
+                return new Vector3(animationCurve(clock.getElapsedTime()), 6, 0);
+            }
+        },
+        {
+            low: {
+                "effector": 3,
+                "iteration": 1,
+                // @ts-ignore
+                "links": [{index: 2}], 
+                "maxAngle": 0.005,
+                "target": 4
+            },
+            medium: {
+                "effector": 3,
+                "iteration": 5,
+                // @ts-ignore
+                "links": [{index: 2}, {index: 1}], 
+                "maxAngle": 0.0025,
+                "target": 4
+            },
+            high: {
+                "effector": 3,
+                "iteration": 10,
+                // @ts-ignore
+                "links": [{index: 2}, {index: 1}], 
+                "maxAngle": 0.0001,
+                "target": 4
+            }
+        },
+        "high"
+    );
+
+    const clock = new THREE.Clock();
+
+    const a = treeMaker.spawnObject();
+    scene.add(a)
+
     return () => {
+        treeMaker.updateAll(clock);
     };
 }
 

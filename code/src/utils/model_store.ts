@@ -458,6 +458,15 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
     group.add(pondSurface.mesh);
     group.add(pondSurface.control_point_grid);
 
+    let incremental = true;
+
+    // document.addEventListener("keydown", e => {
+    //     console.log(e.key)
+    //     if(e.key == "o") {
+    //         incremental = !incremental;
+    //     }
+    // })
+
     return [group, {
         fixedSurfaces: [pondSurface]
     }, (elapsed) => {
@@ -465,8 +474,8 @@ const createPond = (surfaceMaterial: Material): [Group, RegisterableComponents, 
             [...Array(6).keys()].forEach(j => {
                 const oldPoint = pondSurface.control_points[i][j];
                 pondSurface.updateControlPoint(i, j, 
-                    new Vector3(oldPoint.x, (Math.sin(elapsed * (i ** 2 + j ** 2) / 50 + Math.PI / 2) + Math.sin(elapsed * ((5 - i) ** 2 + (5 - j) ** 2) / 50)) / 2, oldPoint.z)
-                )
+                    new Vector3(oldPoint.x, (Math.sin(elapsed * (i ** 2 + j ** 2) / 50 + Math.PI / 2) + Math.sin(elapsed * ((5 - i) ** 2 + (5 - j) ** 2) / 50)) / 2, oldPoint.z),
+                incremental)
             })
         })
     }];

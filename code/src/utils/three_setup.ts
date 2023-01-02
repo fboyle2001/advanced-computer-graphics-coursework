@@ -31,6 +31,8 @@ camera.position.z = 2;
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
+// controls.addEventListener("change", event => console.log({pos: controls.object.position, rot: controls.object.rotation}))
+
 // const controls = new PointerLockControls(camera, renderer.domElement);
 // controls.isLocked = false;
 

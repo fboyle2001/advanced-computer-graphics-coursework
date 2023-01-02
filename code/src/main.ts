@@ -532,7 +532,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
                 if(surface.m == 4 && surface.n == 7) {
                     return;
                 }
-
+                
                 const surfaceSize = Math.max(surface.control_points[surface.m - 1][surface.n - 1].x, surface.control_points[surface.m - 1][surface.n - 1].z);
                 
                 for(let i = 0; i < surface.m; i++) {

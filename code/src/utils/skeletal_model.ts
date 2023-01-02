@@ -172,6 +172,8 @@ class InverseAnimatedModel extends QCAnimatedModel {
             }
         });
 
+        // object.add(SkeletonUtils.getHelperFromSkeleton(skinnedMesh!.skeleton));
+
         this.skinnedMeshes.push(skinnedMesh!);
         this.ikSolvers.push(new CCDIKSolver(skinnedMesh!, [this.animationLevels[this.currentAnimationLevel]]));
 

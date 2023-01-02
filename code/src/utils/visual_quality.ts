@@ -59,7 +59,7 @@ let currentVisualSettings: VisualSettingsStore = JSON.parse(JSON.stringify(defau
 let currentAAPass: SMAAPass | SSAARenderPass | ShaderPass | GlitchPass | null = null;
 
 const maxRunningSize = 32;
-const dynamicDelay = 1.5;
+const dynamicDelay = 0.2;
 let dynamicPaused = false;
 let runningAverageFPS: number[] = [];
 let lastUpdateTime = 0;
