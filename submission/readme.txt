@@ -2,6 +2,11 @@ To open the environment, go into the 'code' folder and run the command 'npm inst
 Once this has loaded, go to http://localhost:8080 and the environment should be loaded!
 I have created and tested this coursework on a Windows 10 64-bit computer.
 
+The files in the 'helpers' folder are not essential.
+They include the implementation for edge collapse and recording the data for vertex splitting, and the code for parametric curves and surface testing. 
+They are included for completeness.
+If you want to run any of Python files in the 'helpers' folder run 'pip install numpy matplotlib', they have been tested on Python 3.10.7
+
 Included files:
 - report.pdf - Contains information about how this meets the criteria
 - video.mp4 - 1 minute video showcasing notable features
