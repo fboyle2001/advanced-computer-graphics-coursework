@@ -47,7 +47,7 @@ class ComponentRegister {
 
     updateAll = (clock: Clock, camera: PerspectiveCamera) => {
         if(!this.started) {
-            this.progressives.forEach(progressive => progressive.simulateNetworkDataArrival(20));
+            this.progressives.forEach(progressive => progressive.simulateNetworkDataArrival(400));
             this.started = true;
         }
 

@@ -3,7 +3,7 @@ import { ModelLoader } from "./model_loader";
 import { BezierSurface, BSplineSurface, createCubicBezierCurve, NURBSSurface } from "./parametric_surfaces";
 import { ProgressiveMesh } from "./progressive_mesh";
 
-import chairModelData from '../progressive_meshes/chair_packed_reduced.json';
+import chairModelData from '../progressive_meshes/chair_50.json';
 import { RegisterableComponents } from "./registerable";
 import { createLevelOfDetail } from "./level_of_detail";
 import { ForwardAnimatedModel, InverseAnimatedModel, SkeletalModel } from "./skeletal_model";
@@ -663,6 +663,30 @@ const createIKRiggedHumanoid = async (): Promise<InverseAnimatedModel> => {
     return personIK;
 }
 
+const createSphere = (material: Material): [Group, NURBSSurface] => {
+    // Reference: https://www.geometrictools.com/Documentation/NURBSCircleSphere.pdf
+
+    const controlPoints = [
+        [new Vector4(0, 0, 1, 1), new Vector4(0, 0, 1, 1/3), new Vector4(0, 0, 1, 1/3), new Vector4(0, 0, 1, 1), new Vector4(0, 0, 1, 1/3), new Vector4(0, 0, 1, 1/3), new Vector4(0, 0, 1, 1)],
+        [new Vector4(2, 0, 1, 1/3), new Vector4(2, 4, 1, 1/9), new Vector4(-2, 4, 1, 1/9), new Vector4(-2, 0, 1, 1/3), new Vector4(-2, -4, 1, 1/9), new Vector4(2, -4, 1, 1/9), new Vector4(2, 0, 1, 1/3)],
+        [new Vector4(2, 0, -1, 1/3), new Vector4(2, 4, -1, 1/9), new Vector4(-2, 4, -1, 1/9), new Vector4(-2, 0, -1, 1/3), new Vector4(-2, -4, -1, 1/9), new Vector4(2, -4, -1, 1/9), new Vector4(2, 0, -1, 1/3)],
+        [new Vector4(0, 0, -1, 1), new Vector4(0, 0, -1, 1/3), new Vector4(0, 0, -1, 1/3), new Vector4(0, 0, -1, 1), new Vector4(0, 0, -1, 1/3), new Vector4(0, 0, -1, 1/3), new Vector4(0, 0, -1, 1)],
+    ]
+
+    const p = 3;
+    const q = 3;
+    const U = [0, 0, 0, 0, 1, 1, 1, 1];
+    const V = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1];
+
+    const surface = new NURBSSurface(controlPoints, p, q, U, V, 24, material);
+
+    const group = new Group();
+    group.add(surface.mesh);
+    group.add(surface.control_point_grid);
+
+    return [group, surface];
+}
+
 export { 
     createBikeShed, 
     createBillboarded, 
@@ -673,5 +697,6 @@ export {
     createCorridor, 
     createSportsField, 
     createTreeMaker,
-    createRiggedHumanoid
+    createRiggedHumanoid,
+    createSphere
 };

@@ -58,8 +58,8 @@ const defaultVisualSettings: VisualSettingsStore = {
 let currentVisualSettings: VisualSettingsStore = JSON.parse(JSON.stringify(defaultVisualSettings));
 let currentAAPass: SMAAPass | SSAARenderPass | ShaderPass | GlitchPass | null = null;
 
-const maxRunningSize = 16;
-const dynamicDelay = 0.3;
+const maxRunningSize = 32;
+const dynamicDelay = 1.5;
 let dynamicPaused = false;
 let runningAverageFPS: number[] = [];
 let lastUpdateTime = 0;
@@ -396,7 +396,7 @@ const dynamicQualityControl = (
     lastUpdateTime = elapsedTime;
 
     const averageFPS = runningAverageFPS.reduce((a, b) => a + b, 0) / runningAverageFPS.length;
-    const lowerVarianceBound = currentVisualSettings.targetFPS * 0.99;
+    const lowerVarianceBound = currentVisualSettings.targetFPS * 0.98;
     const upperVarianceBound = currentVisualSettings.targetFPS * 1.05;
 
     // Make changes in response to too little or too much FPS to tend to the target FPS

@@ -95,85 +95,103 @@
                 style="
                     width: 85%; height: 85%;
                     border: 0.1rem aqua solid;
-                    background-color: rgba(245, 245, 245, 0.6);
+                    background-color: rgba(245, 245, 245, 0.9);
                     padding: 1rem;
                     display: flex; flex-direction: column; align-items: center;
                 "
             >
                 <h1 style="font-weight: 700; font-size: xx-large; margin-bottom: 0.2rem;">Visual Control Settings</h1>
-                <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem;">
+                <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem; display: flex; flex-direction: column;">
                     <h2 style="font-weight: 600; font-size: x-large;">Dynamic Control</h2>
-                    <input
-                        type="checkbox"
-                        id="dynamic_control"
-                    />
-                    <input
-                        type="number"
-                        id="target_fps"
-                    />
+                    <span>Set a target FPS and check the box. Every 1.5s the graphics settings will update.</span>
+                    <span>If your current running average FPS is less than 98% of your target the settings will decrease visual quality.</span>
+                    <span>If your FPS average is greater than 105% of your target the settings will increase visual quality.</span>
+                    <span>Note: Three.js FPS may be different to actual FPS that is calculated using 1 / deltaTime instead!</span>
+                    <div style="display: flex; flex-direction: row; align-items: center;">
+                        <input
+                            type="checkbox"
+                            id="dynamic_control"
+                            style="height: 1.2rem; width: 1.2rem;"
+                        />
+                        <input
+                            type="number"
+                            id="target_fps"
+                            style="padding: 0.1rem;"
+                        />
+                    </div>
                 </div>
                 <div style="width: 60%; border: 0.1rem solid black; margin-bottom: 0.2rem; padding: 0.1rem;" id="custom_settings">
                     <h2 style="font-weight: 600; font-size: x-large;">Render Quality</h2>
-                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
-                        <h3 style="margin-right: 0.4rem;">Render Distance</h3>
-                        <!-- <select
-                            id="render_distance"
-                            style="padding: 0.1rem;"
-                        >
-                            <option value="20">Low (20 units)</option>
-                            <option value="200">Medium (200 units)</option>
-                            <option value="1000">High (1000 units)</option>
-                            <option disabled="disabled" hidden="hidden">Dynamic</option>
-                        </select> -->
-                        <input 
-                            type="number"
-                            id="render_distance"
-                            value="0"
-                            style="padding: 0.1rem;"
-                        />
+                    <div style="display: flex; flex-direction: column; margin-bottom: 0.3rem;">
+                        <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.1rem;">
+                            <h3 style="margin-right: 0.4rem;">Render Distance</h3>
+                            <input 
+                                type="number"
+                                id="render_distance"
+                                value="0"
+                                style="padding: 0.1rem;"
+                            />
+                        </div>
+                        <span>Affects the far frustrum of the camera to reduce number of objects to render.</span>
                     </div>
-                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
-                        <h3 style="margin-right: 0.4rem;">Anti-Aliasing</h3>
-                        <select
-                            id="aa_type"
-                            style="padding: 0.1rem;"
-                        >
-                            <option value="disabled">Disabled</option>
-                            <option value="fxaa">FXAA</option>
-                            <!-- <option value="ssaa">SSAA</option> -->
-                            <option value="smaa">SMAA</option>
-                        </select>
+                    <div style="display: flex; flex-direction: column; margin-bottom: 0.3rem;">
+                        <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.1rem;">
+                            <h3 style="margin-right: 0.4rem;">Anti-Aliasing</h3>
+                            <select
+                                id="aa_type"
+                                style="padding: 0.1rem;"
+                            >
+                                <option value="disabled">Disabled</option>
+                                <option value="fxaa">Fast Approximate AA (FXAA)</option>
+                                <!-- <option value="ssaa">SSAA</option> -->
+                                <option value="smaa">Subpixel Morphological AA (SMAA)</option>
+                            </select>
+                        </div>
+                        <span>Configure anti-aliasing, select None, FXAA, or SMAA in order of their impact on FPS.</span>
                     </div>
-                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
-                        <h3 style="margin-right: 0.4rem;">Animation Quality</h3>
-                        <select
-                            id="animation_quality"
-                            style="padding: 0.1rem;"
-                        >
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low (Update every 8 frames)</option>
-                        </select>
+                    <div style="display: flex; flex-direction: column; margin-bottom: 0.3rem;">
+                        <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.1rem;">
+                            <h3 style="margin-right: 0.4rem;">Animation Quality</h3>
+                            <select
+                                id="animation_quality"
+                                style="padding: 0.1rem;"
+                            >
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <span>High: Forward Kinematics update once every frame, Inverse Kinematics full bone chain and 10 iterations per update</span>
+                        <span>Medium: Forward Kinematics update once every 4 frames, Inverse Kinematics increased bone chain and 5 iterations per update</span>
+                        <span>Low: Forward Kinematics update once every 8 frames, Inverse Kinematics reduced bone chain and 1 iteration per update</span>
                     </div>
-                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
-                        <h3 style="margin-right: 0.4rem;">Non-LOD Parametric Surface Samples</h3>
-                        <input 
-                            type="number"
-                            id="fixed_samples"
-                            value="0"
-                            style="padding: 0.1rem;"
-                        />
+                    <div style="display: flex; flex-direction: column; margin-bottom: 0.3rem;">
+                        <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.1rem;">
+                            <h3 style="margin-right: 0.4rem;">Non-LOD Parametric Surface Samples</h3>
+                            <input 
+                                type="number"
+                                id="fixed_samples"
+                                value="0"
+                                style="padding: 0.1rem;"
+                            />
+                        </div>
+                        <span>Some surfaces use a fixed number of samples (trampoline, dome, pond spheres). You can set this manually.</span>
                     </div>
-                    <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.15rem;">
-                        <h3 style="margin-right: 0.4rem;">Enable Debug Mode</h3>
-                        <input 
-                            type="checkbox"
-                            id="debug_mode"
-                            style="height: 1.2rem; width: 1.2rem;"
-                        />
+                    <div style="display: flex; flex-direction: column; margin-bottom: 0.3rem;">
+                        <div style="display: flex; flex-direction: row; align-items: center; margin-bottom: 0.1rem;">
+                            <h3 style="margin-right: 0.4rem;">Enable Debug Mode</h3>
+                            <input 
+                                type="checkbox"
+                                id="debug_mode"
+                                style="height: 1.2rem; width: 1.2rem;"
+                            />
+                        </div>
+                        <span>Enable debug mode to see the control point grids for the parametric surfaces (they update in real-time)</span>
                     </div>
                     <div style="margin-bottom: 0.15rem;">
                         <h3>Level of Detail</h3>
+                        <span>Configure the level of detail directly. Models are preset but you can edit the distance that they swap in and out at.</span>
+                        <span>You can also change the number of samples used to render certain parametric surfaces, less = lower quality = less polygons.</span>
                         <table>
                             <thead>
                                 <tr>

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { renderer, scene, camera, controls, stats, updateStatsDisplay } from './utils/three_setup';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
-import { createBikeShed, createClassroom, createCorridor, createPond, createRiggedHumanoid, createSportsField, createSportsHall, createTrampoline, createTreeMaker } from './utils/model_store';
+import { createBikeShed, createClassroom, createCorridor, createPond, createRiggedHumanoid, createSphere, createSportsField, createSportsHall, createTrampoline, createTreeMaker } from './utils/model_store';
 import { ComponentRegister } from './utils/registerable';
 import { BoxGeometry, Group, PlaneGeometry, Vector3 } from 'three';
 import { ModelLoader } from './utils/model_loader';
@@ -12,13 +12,10 @@ import { NURBSSurface } from './utils/parametric_surfaces';
 const offset = (): number => Math.round(Math.random() * 1e4) / 1e6;
 
 /* BASIC MATERIALS */
-const purpleMaterial = new THREE.MeshBasicMaterial({ color: 0x6d12a9, side: THREE.DoubleSide });
 const brownMaterial = new THREE.MeshBasicMaterial({ color: 0x9d7c5d, side: THREE.DoubleSide });
 const blueMaterial = new THREE.MeshBasicMaterial({ color: 0x268cab, side: THREE.DoubleSide });
-const redMaterial = new THREE.MeshBasicMaterial({ color: 0x910c00, side: THREE.DoubleSide });
 const greyMaterial = new THREE.MeshBasicMaterial({ color: 0x404040, side: THREE.DoubleSide });
 const lightGreyMaterial = new THREE.MeshBasicMaterial({ color: 0x808080, side: THREE.DoubleSide });
-const wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x808080, side: THREE.DoubleSide, wireframe: true });
 
 const composedRenderer = new EffectComposer(renderer);
 const primaryRenderPass = new RenderPass(scene, camera);
@@ -107,7 +104,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const treeBillboardTexture = new THREE.TextureLoader().load("/textures/tree_billboard.png");
     treeBillboardTexture.encoding =THREE.sRGBEncoding;
 
-    const treeBillboardMaterial = new THREE.MeshBasicMaterial({
+    const treeBillboardMaterial = new THREE.MeshPhongMaterial({
         map: treeBillboardTexture,
         transparent: true,
         depthTest: true,
@@ -193,6 +190,17 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         side: THREE.DoubleSide
     });
 
+    const domeMap = new THREE.TextureLoader().load("/textures/dome.jpg");
+    domeMap.wrapS = domeMap.wrapT = THREE.RepeatWrapping;
+    domeMap.repeat.set(6, 6)
+    domeMap.anisotropy = 16;
+    domeMap.encoding = THREE.sRGBEncoding;
+
+    const domeTexture = new THREE.MeshStandardMaterial({
+        map: domeMap,
+        side: THREE.DoubleSide
+    });
+
     // RIGGED MODELS
 
     const [treeMakerOwner, createNewTree] = await createTreeMaker(treeBillboardMaterial);
@@ -240,7 +248,7 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
         const [bikeShed, registerable] = createBikeShed(visualSettings.fixedSurfaceSamples, classroomRoofMaterial, brownMaterial, woodenPanelMaterial);
         let size = new Vector3();
         new THREE.Box3().setFromObject(bikeShed).getSize(size);
-        bikeShed.position.add(new Vector3(0, 0.6 + offset(), (size.z + 0.2) * i));
+        bikeShed.position.add(new Vector3(0, 0.62 + offset(), (size.z + 0.2) * i));
         registeredComponents.addComponents(registerable);
         scene.add(bikeShed);
     }
@@ -338,7 +346,17 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     const entrancePavement = new THREE.Mesh(new BoxGeometry(2.5, 4.0, 30), lightGreyMaterial);
     entrancePavement.position.add(new Vector3(27.5, -1.4 - offset(), 45));
+
+    const [leftSphere, lsSurface] = createSphere(gridMaterial);
+    leftSphere.position.add(new Vector3(27.5, 1.525 + offset(), 31.25));
+    
+    const [rightSphere, rsSurface] = createSphere(gridMaterial);
+    rightSphere.position.add(new Vector3(27.5, 1.525 + offset(), 58.75));
+
+    registeredComponents.addComponents({ fixedSurfaces: [lsSurface, rsSurface] });
     scene.add(entrancePavement);
+    scene.add(leftSphere);
+    scene.add(rightSphere);
 
     /** END OF ENTRANCE */
 
@@ -486,6 +504,21 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
 
     /** END OF OUTSIDE FIELD */
 
+    /** START OF BIG DOME */
+
+    const [dome, domeSurface] = createSphere(domeTexture);
+    registeredComponents.addComponents({ fixedSurfaces: [domeSurface] })
+    dome.scale.set(25, 25, 25);
+    dome.position.set(78, -10, 80)
+    scene.add(dome);
+
+    const domePlane = new THREE.Mesh(new PlaneGeometry(40, 60), grassTexture);
+    domePlane.rotation.x = -Math.PI / 2;
+    domePlane.position.set(80, 0, 80);
+    scene.add(domePlane)
+
+    /** END OF BIG DOME */
+
     let earthquake = false;
 
     // EARTHQUAKE SETUP
@@ -496,6 +529,10 @@ const constructInitialScene = async (scene: THREE.Scene): Promise<(clock: THREE.
     const earthquakeApplier = (elapsed: number, delta: number) => {
         registeredComponents.fixedSurfaces.forEach(surface => {
             if(surface instanceof NURBSSurface) {
+                if(surface.m == 4 && surface.n == 7) {
+                    return;
+                }
+
                 const surfaceSize = Math.max(surface.control_points[surface.m - 1][surface.n - 1].x, surface.control_points[surface.m - 1][surface.n - 1].z);
                 
                 for(let i = 0; i < surface.m; i++) {
