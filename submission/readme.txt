@@ -6,6 +6,7 @@ The files in the 'helpers' folder are not essential.
 They include the implementation for edge collapse and recording the data for vertex splitting, and the code for parametric curves and surface testing. 
 They are included for completeness.
 If you want to run any of Python files in the 'helpers' folder run 'pip install numpy matplotlib', they have been tested on Python 3.10.7
+To generate a progressive mesh, navigate to the helpers/progressive_meshes folder and run 'python progressive_generator.py'
 
 Included files:
 - report.pdf - Contains information about how this meets the criteria
@@ -30,7 +31,7 @@ textures/grass.jpg - All3DFree https://www.all3dfree.net/grass-textures.html
 textures/gravel.jpg - Architextures https://architextures.org/textures/587 (Licensed under CC 4.0)
 textures/skybox.jpg - Render Knight https://assetstore.unity.com/packages/2d/textures-materials/sky/fantasy-skybox-free-18353 (Licensed under Standard Unity Asset Store EULA)
 textures/trampoline.jpg - Caccaro https://www.caccaro.com/en/cabina-module 
-textures/tree_billboard.jpg 
+textures/tree_billboard.jpg - fafi622 https://sketchfab.com/3d-models/rigged-pine-tree001-eec38303069a431597dc12a9a9975fd3 (Licensed under CC-BY-4.0)
 textures/uv_grid_opengl.jpg - https://threejs.org/examples/textures/uv_grid_opengl.jpg (Licensed under The MIT License, Copyright 2022 Three.js)
 textures/water.jpg - Better Your Life https://www.vecteezy.com/vector-art/1844212-water-texture-top-view-background-vector-design-illustration 
 textures/wooden_shed.jpg - Doberman84 https://www.dreamstime.com/old-wooden-shed-boards-peeling-paint-vertical-direction-boards-texture-blue-tones-old-wooden-shed-boards-image169986567

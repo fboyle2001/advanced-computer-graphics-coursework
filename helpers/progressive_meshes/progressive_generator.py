@@ -16,7 +16,7 @@ def reproduce_model(file_name):
 
 
 if __name__ == "__main__":
-    file_name = ""
+    file_name = "chair_max.obj"
 
     if file_name == "":
         print("You need to specify the file in the code first! Provide a path to a .obj file.")
